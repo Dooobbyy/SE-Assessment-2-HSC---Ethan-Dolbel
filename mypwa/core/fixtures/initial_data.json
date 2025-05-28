@@ -1,0 +1,33 @@
+[
+  {
+    "model": "core.property",
+    "pk": 1,
+    "fields": {
+      "name": "Beachside Apartment",
+      "address": "123 Ocean Drive",
+      "purchase_date": "2020-05-15",
+      "purchase_price": "650000"
+    }
+  },
+  {
+    "model": "core.income",
+    "pk": 1,
+    "fields": {
+      "property": 1,
+      "date": "2025-05-01",
+      "amount": "2500",
+      "description": "Rental Income"
+    }
+  },
+  {
+    "model": "core.expense",
+    "pk": 1,
+    "fields": {
+      "property": 1,
+      "date": "2025-05-05",
+      "amount": "1200",
+      "category": "Mortgage",
+      "description": "Monthly mortgage payment"
+    }
+  }
+]

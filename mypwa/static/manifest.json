@@ -1,0 +1,13 @@
+{
+  "name": "Real Estate Finance Tracker",
+  "short_name": "PRALESTATE",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1F1F28",
+  "theme_color": "#FEC53A",
+  "icons": [{
+    "src": "/static/icon.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }]
+}

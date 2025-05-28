@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Real Estate Finance Tracker{% endblock %}</title>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js "></script>
+
+    <!-- Viewport for PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Manifest for PWA -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="icon" type="image/png" href="{% static 'icon.png' %}">
+
+    <!-- Load CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Real Estate Tracker</h2>
+        <ul class="nav">
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Properties</a></li>
+            <li><a href="#">Income & Expenses</a></li>
+            <li><a href="#">Reports</a></li>
+            <li><a href="#">Tools</a></li>
+            <li><a href="#">Settings</a></li>
+            <li><a href="#">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Service Worker for PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(registration) {
+            console.log('Service Worker registered with scope:', registration.scope);
+          }, function(err) {
+            console.log('Service Worker registration failed:', err);
+          });
+        });
+      }
+    </script>
+</body>
+</html>

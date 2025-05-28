@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Dashboard | Real Estate Finance Tracker
+{% endblock %}
+
+{% block content %}
+    <h1>Dashboard</h1>
+
+    <!-- Top Stats -->
+    <div class="stats-grid">
+        <div class="card portfolio-value">
+            <p>Total Portfolio Value</p>
+            <li><strong>${{ total_portfolio_value|floatformat:2 }}</strong></li>
+        </div>
+        <div class="card cash-flow">
+            <p>Monthly Cash Flow</h3>
+            <li><strong>${{ monthly_cash_flow|floatformat:2 }}</strong></li>
+        </div>
+            <!-- Monthly Summary with Dropdown -->
+    <div class="card monthly-summary">
+        <p>Monthly Summary</p>
+        <form id="month-form">
+            <label for="month-select">Select Month:</label>
+            <select id="month-select" name="month">
+                {% for month in months %}
+                    <option value="{{ month }}" {% if month == current_month %}selected{% endif %}>
+                        {{ month }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+        <ul id="summary-values">
+            <li><strong>Net Profit:</strong> <span style="color: var(--color-positive)">{{ summary_data.netProfit }}</span></li>
+            <li><strong>Maintenance Costs:</strong> <span style="color: var(--color-negative)">{{ summary_data.maintenanceCosts }}</span></li>
+            <li><strong>Final Cash Flow:</strong> <span style="color: var(--color-gold)">{{ summary_data.finalCashFlow }}</span></li>
+        </ul>
+    </div>
+
+    <!-- Financial Year Summary -->
+    <div class="card yearly-summary">
+        <p>Financial Year Summary (2024)</p>
+        <ul>
+            <li><strong>Total Income:</strong> $50,000</li>
+            <li><strong>Total Expenses:</strong> $20,000</li>
+            <li><strong>Net Profit:</strong> $30,000</li>
+        </ul>
+    </div>
+
+    <!-- Quick Metrics -->
+    <div class="card metrics">
+        <p>Quick Metrics</p>
+        <ul>
+            <li>Total Properties: <strong>5</strong></li>
+            <li>Rent Collected This Month: <strong>$12,000</strong></li>
+            <li>Pending Expenses: <strong>$3,500</strong></li>
+        </ul>
+    </div>
+
+    <!-- Dashboard Tips -->
+    <div class="card tips">
+        <p>Dashboard Tips</p>
+        <ul>
+            <li>📌 Add property details under the “Properties” tab.</li>
+            <li>📈 Track monthly rent payments for accurate reports.</li>
+            <li>💡 Use the tools section to calculate ROI and mortgage payments.</li>
+        </ul>
+    </div>
+
+    
+    </div>
+
+    <!-- Middle Charts -->
+    <div class="charts-section">
+        <div class="card income-expense">
+            <p>Income vs Expense</p>
+            <div class="card income-expense">
+                <h3>Income vs Expense</h3>
+                <canvas id="incomeExpenseLineChart" width="400" height="300"></canvas>
+                <p id="chart-message" style="display: none; text-align: center; color: var(--color-muted);">
+                    No data available for this month
+                </p>
+            </div>
+        </div>
+
+        <div class="card top-property">
+            <p>Top Performing Property</p>
+            {% if properties %}
+                {% for property in properties %}
+                    <canvas id="propertyPerformancePieChart" width="400" height="300"></canvas>
+                    <li><strong>{{ property.name }} - ${{ property.purchase_price }}</strong></li>
+                {% endfor %}
+            {% else %}
+                <li>No properties found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+<!-- Alerts / Reminders -->
+    <div class="card alerts">
+        <h3>Alerts / Reminders</h3>
+        <ul>
+            <li>⚠️ Mortgage due next week</li>
+            <li>📅 Property inspection scheduled</li>
+        </ul>
+    </div>
+
+<script>
+    function renderLineChart(labels, incomeData, expenseData) {
+        const ctx = document.getElementById('incomeExpenseLineChart').getContext('2d');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomeData,
+                        borderColor: '#00C896',
+                        backgroundColor: 'rgba(0, 200, 150, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expenseData,
+                        borderColor: '#E04F5F',
+                        backgroundColor: 'rgba(224, 79, 95, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' }, title: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('/ajax/chart-data/?month=May')
+            .then(response => response.json())
+            .then(data => {
+                renderLineChart(
+                    data.monthlyLabels,
+                    data.monthlyIncomeData,
+                    data.monthlyExpenseData
+                );
+            })
+            .catch(error => {
+                console.error("Failed to load chart data:", error);
+            });
+    });
+</script>
+
+<script>
+    function updateChart(month) {
+        fetch(`/ajax/chart-data/?month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                renderLineChart(
+                    data.monthlyLabels,
+                    data.monthlyIncomeData,
+                    data.monthlyExpenseData
+                );
+            })
+            .catch(error => console.error("Error loading chart data:", error));
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const monthSelect = document.getElementById('month-select');
+
+        monthSelect.addEventListener('change', function () {
+            const selectedMonth = monthSelect.value;
+            updateChart(selectedMonth);
+        });
+
+        // Load chart on page load
+        const defaultMonth = "{{ current_month }}";
+        if (defaultMonth) {
+            updateChart(defaultMonth);
+        }
+    });
+</script>
+
+<script>
+    let incomeChart = null;
+
+    function renderLineChart(labels, incomeData, expenseData) {
+        const canvas = document.getElementById('incomeExpenseLineChart');
+        const ctx = canvas.getContext('2d');
+
+        // Destroy old chart
+        if (incomeChart) {
+            incomeChart.destroy();
+        }
+
+        // Draw new chart
+        incomeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomeData,
+                        borderColor: '#00C896',
+                        backgroundColor: 'rgba(0, 200, 150, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expenseData,
+                        borderColor: '#E04F5F',
+                        backgroundColor: 'rgba(224, 79, 95, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' }, title: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    function updateChart(month) {
+        fetch(`/ajax/chart-data/?month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                renderLineChart(
+                    data.monthlyLabels,
+                    data.monthlyIncomeData,
+                    data.monthlyExpenseData
+                );
+            })
+            .catch(error => console.error("Error loading chart data:", error));
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const monthSelect = document.getElementById('month-select');
+
+        // Set up dropdown change listener
+        monthSelect.addEventListener('change', function () {
+            const selectedMonth = monthSelect.value;
+            updateChart(selectedMonth);
+        });
+
+        // On page load, get selected month from dropdown
+        const defaultMonth = "{{ current_month }}";
+        const savedSelection = localStorage.getItem('selectedMonth');
+
+        // Use saved month if available, else use default
+        const initialMonth = savedSelection || defaultMonth;
+
+        // Set dropdown value
+        monthSelect.value = initialMonth;
+
+        // Load chart with correct month
+        updateChart(initialMonth);
+    });
+</script>
+{% endblock %}
