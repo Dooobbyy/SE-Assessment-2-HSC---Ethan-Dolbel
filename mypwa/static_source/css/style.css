@@ -148,6 +148,13 @@ body {
   margin-bottom: 10px;
 }
 
+.card h2 {
+  margin-top: 0;
+  color: var(--color-card-text);
+  font-size: 3em;
+  margin-bottom: 0px;
+}
+
 .card p {
   font-size: 1.5em;
   color: var(--color-gold);
