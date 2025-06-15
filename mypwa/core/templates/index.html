@@ -83,18 +83,70 @@
             </div>
         </div>
 
-        <div class="card top-property">
-            <p>Top Performing Property</p>
-            {% if properties %}
-                {% for property in properties %}
-                    <canvas id="propertyPerformancePieChart" width="400" height="300"></canvas>
-                    <li><strong>{{ property.name }} - ${{ property.purchase_price }}</strong></li>
-                {% endfor %}
-            {% else %}
-                <li>No properties found.</p>
-            {% endif %}
-        </div>
-    </div>
+        <!-- Pie Chart Card -->
+<div class="card top-property">
+    <h3>Property Performance</h3>
+    <canvas id="propertyPerformancePieChart" width="400" height="300"></canvas>
+    <p id="pie-chart-message" style="text-align:center; color: var(--color-muted); display: none;">
+        No properties found.
+    </p>
+</div>
+
+<script>
+let pieChartInstance = null;
+
+function renderPieChart(labels, values) {
+    const canvas = document.getElementById('propertyPerformancePieChart');
+    const ctx = canvas.getContext('2d');
+
+    // Clear old chart if it exists
+    const oldChart = Chart.getChart(canvas);
+    if (oldChart) oldChart.destroy();
+
+    // Show message if no data
+    const messageDiv = document.getElementById('pie-chart-message');
+    if (!labels.length || !values.length || values.every(v => v === 0)) {
+        messageDiv.style.display = 'block';
+        return;
+    } else {
+        messageDiv.style.display = 'none';
+    }
+
+    // Define colors
+    const colors = ['#00A3FF', '#0088CC', '#0070B2', '#D7D7D7'];
+
+    // Draw new chart
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Net Profit',
+                data: values,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: '#1F1F28'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' }, title: { display: false } }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    fetch('/ajax/pie-chart-data/?month=May')
+        .then(response => response.json())
+        .then(data => {
+            console.log("Pie chart data:", data);
+            renderPieChart(data.propertyLabels, data.propertyValues);
+        })
+        .catch(error => {
+            console.error("Failed to load pie chart data:", error);
+            document.getElementById('pie-chart-message').style.display = 'block';
+        });
+});
+</script>
 
 <!-- Alerts / Reminders -->
     <div class="card alerts">

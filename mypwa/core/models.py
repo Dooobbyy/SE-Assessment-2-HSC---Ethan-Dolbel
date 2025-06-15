@@ -9,6 +9,9 @@ class Property(models.Model):
     purchase_price = models.DecimalField(max_digits=12, decimal_places=2)
     current_value = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
 
+    class Meta:
+        verbose_name_plural = 'Properties'
+
     def __str__(self):
         return self.name
 

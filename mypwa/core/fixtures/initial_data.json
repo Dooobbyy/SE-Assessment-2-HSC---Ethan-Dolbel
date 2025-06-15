@@ -1,33 +1,97 @@
 [
   {
     "model": "core.property",
-    "pk": 1,
+    "pk": 4,
     "fields": {
-      "name": "Beachside Apartment",
-      "address": "123 Ocean Drive",
-      "purchase_date": "2020-05-15",
-      "purchase_price": "650000"
+      "name": "Rural Cabin",
+      "address": "567 Forest Lane",
+      "purchase_date": "2023-01-15",
+      "purchase_price": "300000"
     }
   },
   {
-    "model": "core.income",
-    "pk": 1,
+    "model": "core.property",
+    "pk": 5,
     "fields": {
-      "property": 1,
+      "name": "Urban Condo",
+      "address": "890 City Blvd",
+      "purchase_date": "2023-02-20",
+      "purchase_price": "450000"
+    }
+  },
+  {
+    "model": "core.property",
+    "pk": 6,
+    "fields": {
+      "name": "Vacation Villa",
+      "address": "123 Beachfront Dr",
+      "purchase_date": "2023-03-10",
+      "purchase_price": "500000"
+    }
+  },
+
+  {
+    "model": "core.income",
+    "pk": 4,
+    "fields": {
+      "property": 4,
       "date": "2025-05-01",
-      "amount": "2500",
+      "amount": "1200",
       "description": "Rental Income"
     }
   },
   {
-    "model": "core.expense",
-    "pk": 1,
+    "model": "core.income",
+    "pk": 5,
     "fields": {
-      "property": 1,
+      "property": 5,
+      "date": "2025-05-02",
+      "amount": "1000",
+      "description": "Rental Income"
+    }
+  },
+  {
+    "model": "core.income",
+    "pk": 6,
+    "fields": {
+      "property": 6,
+      "date": "2025-05-03",
+      "amount": "1100",
+      "description": "Rental Income"
+    }
+  },
+
+  {
+    "model": "core.expense",
+    "pk": 4,
+    "fields": {
+      "property": 4,
       "date": "2025-05-05",
-      "amount": "1200",
+      "amount": "800",
       "category": "Mortgage",
       "description": "Monthly mortgage payment"
+    }
+  },
+  {
+    "model": "core.expense",
+    "pk": 5,
+    "fields": {
+      "property": 5,
+      "date": "2025-05-06",
+      "amount": "700",
+      "category": "Maintenance",
+      "description": "Monthly maintenance costs"
+    }
+  },
+  {
+    "model": "core.expense",
+    "pk": 6,
+    "fields": {
+      "property": 6,
+      "date": "2025-05-07",
+      "amount": "900",
+      "category": "Insurance",
+      "description": "Annual insurance renewal"
     }
   }
 ]

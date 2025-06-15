@@ -135,3 +135,84 @@ def get_chart_data(request):
         'monthlyIncomeData': monthly_income_data,
         'monthlyExpenseData': monthly_expense_data,
     })
+
+
+
+
+def get_pie_chart_data(request):
+    month_name = request.GET.get('month', datetime.now().strftime('%B'))
+
+    try:
+        month_number = list(calendar.month_name).index(month_name)
+    except ValueError:
+        month_number = datetime.now().month
+
+    year = int(request.GET.get('year', datetime.now().year))
+
+    properties = Property.objects.all()
+    combined = []
+
+    for prop in properties:
+        income_total = sum(i.amount for i in Income.objects.filter(property=prop, date__month=month_number, date__year=year))
+        expense_total = sum(e.amount for e in Expense.objects.filter(property=prop, date__month=month_number, date__year=year))
+        profit = round(float(income_total - expense_total), 2)
+        combined.append((prop.name, profit))
+
+    # Sort descending by profit
+    combined.sort(key=lambda x: x[1], reverse=True)
+
+    labels = []
+    values = []
+
+    if len(combined) >= 1:
+        labels.append(combined[0][0])
+        values.append(combined[0][1])
+
+    if len(combined) >= 2:
+        labels.append(combined[1][0])
+        values.append(combined[1][1])
+
+    if len(combined) >= 3:
+        labels.append(combined[2][0])
+        values.append(combined[2][1])
+
+    if len(combined) > 3:
+        rest_sum = sum(val for name, val in combined[3:])
+        labels.append("Other Properties")
+        values.append(round(rest_sum, 2))
+
+    return JsonResponse({
+        'propertyLabels': labels or ['No Properties'],
+        'propertyValues': values or [0]
+    })
+
+
+def properties_view(request):
+    properties = Property.objects.all()
+    property_list = []
+
+    for prop in properties:
+        # Get latest rent income (only if exists)
+        rent = sum(
+            i.amount for i in Income.objects.filter(
+                property=prop,
+                description="Rental Income"
+            )
+        ) or 0  # Default to 0 if no income
+
+        # Get latest mortgage expense (only if exists)
+        mortgage = sum(
+            e.amount for e in Expense.objects.filter(
+                property=prop,
+                category="Mortgage"
+            )
+        ) or 0  # Default to 0 if no expense
+
+        property_list.append({
+            'name': prop.name,
+            'address': prop.address,
+            'purchase_price': prop.purchase_price,
+            'rent': rent,
+            'mortgage': mortgage
+        })
+    return render(request, 'properties.html', {'properties': property_list})
