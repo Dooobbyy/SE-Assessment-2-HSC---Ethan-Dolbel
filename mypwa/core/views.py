@@ -1,10 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import Property, Income, Expense
-from datetime import datetime
+from datetime import datetime, date
 from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 import calendar
+from .forms import PropertyForm, IncomeFormSet, ExpenseFormSet
+from dateutil.rrule import rrule, MONTHLY
 
 def index(request):
     properties = Property.objects.all()
@@ -216,3 +218,36 @@ def properties_view(request):
             'mortgage': mortgage
         })
     return render(request, 'properties.html', {'properties': property_list})
+
+def add_property(request):
+    if request.method == 'POST':
+        property_form = PropertyForm(request.POST)
+        rent = float(request.POST.get('rent', 0))
+        mortgage = float(request.POST.get('mortgage', 0))
+
+        if property_form.is_valid():
+            property = property_form.save()
+
+            # Save rent as single entry
+            Income.objects.create(
+                property=property,
+                amount=rent,
+                description='Rental Income',
+                date=property.purchase_date
+            )
+
+            # Save mortgage as single entry
+            Expense.objects.create(
+                property=property,
+                amount=mortgage,
+                category='Mortgage',
+                date=property.purchase_date
+            )
+
+            return redirect('properties')
+    else:
+        property_form = PropertyForm()
+
+    return render(request, 'add_property.html', {
+        'property_form': property_form
+    })

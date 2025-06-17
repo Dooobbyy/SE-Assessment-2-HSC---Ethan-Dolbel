@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Add New Property</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Property Name -->
+        <div class="form-group">
+            <label for="id_name">Name</label>
+            {{ property_form.name }}
+            {% if property_form.name.errors %}
+                <div class="form-error">{{ property_form.name.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Address -->
+        <div class="form-group">
+            <label for="id_address">Address</label>
+            {{ property_form.address }}
+            {% if property_form.address.errors %}
+                <div class="form-error">{{ property_form.address.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Purchase Date -->
+        <div class="form-group">
+            <label for="id_purchase_date">Purchase Date</label>
+            {{ property_form.purchase_date }}
+            {% if property_form.purchase_date.errors %}
+                <div class="form-error">{{ property_form.purchase_date.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Purchase Price -->
+        <div class="form-group">
+            <label for="id_purchase_price">Purchase Price</label>
+            {{ property_form.purchase_price }}
+            {% if property_form.purchase_price.errors %}
+                <div class="form-error">{{ property_form.purchase_price.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Current Value -->
+        <div class="form-group">
+            <label for="id_current_value">Current Value</label>
+            {{ property_form.current_value }}
+            {% if property_form.current_value.errors %}
+                <div class="form-error">{{ property_form.current_value.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Rent -->
+        <div class="form-group">
+            <label>Rent (Monthly)</label>
+            <input type="number" name="rent" required step="any" min="0">
+        </div>
+
+        <!-- Mortgage -->
+        <div class="form-group">
+            <label>Mortgage (Monthly)</label>
+            <input type="number" name="mortgage" required step="any" min="0">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Property</button>
+    </form>
+</div>
+{% endblock %}

@@ -299,3 +299,76 @@ body {
     font-size: 14px;
     border-radius: 4px;
 }
+
+/* Footer Styles */
+.credits {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #1F1F28;
+    padding: 10px;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+}
+
+
+/* Form Container */
+.form-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+/* Labels */
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-card-text);
+    font-weight: 500;
+}
+
+/* Inputs */
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-gold);
+    border-radius: 4px;
+    color: var(--color-card-text);
+    font-size: 1em;
+}
+
+/* Date Input Fix */
+.form-group input[type="date"] {
+    padding: 8px; /* Adjust for calendar icon */
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--color-gold);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    border-radius: 4px;
+}
+
+.form-error {
+    color: #E04F5F;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* Hide formset date fields by ID */
+#formset-rent-date,
+#formset-mortgage-date {
+    display: none;
+}

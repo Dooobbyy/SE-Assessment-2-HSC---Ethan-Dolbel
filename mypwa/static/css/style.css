@@ -148,6 +148,13 @@ body {
   margin-bottom: 10px;
 }
 
+.card h2 {
+  margin-top: 0;
+  color: var(--color-card-text);
+  font-size: 3em;
+  margin-bottom: 0px;
+}
+
 .card p {
   font-size: 1.5em;
   color: var(--color-gold);
@@ -252,3 +259,104 @@ body {
   margin-bottom: 8px;
 }
 
+.pie-chart-top-property {
+    background-color: #00A3FF; /* Bright blue */
+}
+
+.pie-chart-other-properties {
+    background-color: #D7D7D7; /* Light gray */
+}
+
+/* Properties Page Styles */
+.properties-page {
+    padding: 20px;
+}
+
+.property-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    color: var(--color-card-text);
+}
+
+.property-table th,
+.property-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+}
+
+.property-table th {
+    background-color: #2B2B38; /* Darker gray header */
+}
+
+.btn-primary {
+    background-color: var(--color-gold);
+    color: var(--color-white);
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 4px;
+}
+
+/* Footer Styles */
+.credits {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #1F1F28;
+    padding: 10px;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+}
+
+
+/* Form Container */
+.form-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+/* Labels */
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-card-text);
+    font-weight: 500;
+}
+
+/* Inputs */
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-gold);
+    border-radius: 4px;
+    color: var(--color-card-text);
+    font-size: 1em;
+}
+
+/* Date Input Fix */
+.form-group input[type="date"] {
+    padding: 8px; /* Adjust for calendar icon */
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--color-gold);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    border-radius: 4px;
+}

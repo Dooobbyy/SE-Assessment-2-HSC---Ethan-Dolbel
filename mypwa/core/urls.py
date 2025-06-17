@@ -7,4 +7,5 @@ urlpatterns = [
     path('ajax/chart-data/', views.get_chart_data, name='ajax_chart_data'),
     path('ajax/pie-chart-data/', views.get_pie_chart_data, name='ajax_pie_chart_data'),
     path('properties/', views.properties_view, name='properties'),
+    path('properties/add/', views.add_property, name='add_property'),
 ]

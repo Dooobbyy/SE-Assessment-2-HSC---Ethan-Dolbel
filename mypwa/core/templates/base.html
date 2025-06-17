@@ -17,42 +17,59 @@
 
     <!-- Load CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <!-- Icons -->
+    <img src="{% static 'images/003-home.png' %}" alt="Home icon">
 </head>
 <body>
-    </div>
+  </div>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h2>Real Estate Tracker</h2>
-        <ul class="nav">
-            <li><a href="#"><img src="static_source/images/003-home.png" alt="Home icon" > Dashboard</a></li>
-            <li><a href="#">Properties</a></li>
-            <li><a href="#">Income & Expenses</a></li>
-            <li><a href="#">Reports</a></li>
-            <li><a href="#">Tools</a></li>
-            <li><a href="#">Settings</a></li>
-            <li><a href="#">Logout</a></li>
-        </ul>
-    </div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+      <h2>Real Estate Tracker</h2>
+      <ul class="nav">
+          <li><a href="{% url 'index' %}"><img src="{% static 'images/003-home.png' %}" alt="Home icon"> Dashboard</a></li>
+          <li><a href="{% url 'properties' %}">Properties</a></li>
+          <li><a href="{% url 'index' %}">Income & Expenses</a></li>
+          <li><a href="{% url 'index' %}">Reports</a></li>
+          <li><a href="{% url 'index' %}">Tools</a></li>
+          <li><a href="{% url 'index' %}">Settings</a></li>
+          <li><a href="{% url 'index' %}">Logout</a></li>
+      </ul>
+  </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        {% block content %}
-        {% endblock %}
-    </div>
+  <!-- Main Content -->
+  <div class="main-content">
+      {% block content %}
+      {% endblock %}
+  </div>
+  
+  <!-- Footer for Credits -->
+  <footer class="credits">
+      <div>
+          Icons made by 
+          <a href="https://www.freepik.com"  title="Freepik">Freepik</a>,
+          <a href="https://www.flaticon.com/authors/hilmy-abiyyu-a"  title="Hilmy Abiyyu A.">Hilmy Abiyyu A.</a>,
+          <a href="https://www.flaticon.com/authors/torticon"  title="Torticon">Torticon</a>,
+          <a href="https://www.flaticon.com/authors/laura-reen"  title="Laura Reen">Laura Reen</a>,
+          <a href="https://www.flaticon.com/authors/dokodemo"  title="dokodemo">dokodemo</a>,
+          <a href="https://www.flaticon.com/authors/meaicon"  title="meaicon">meaicon</a>,
+          <a href="https://www.flaticon.com/authors/altop7"  title="ALTOP7">ALTOP7</a> 
+          from <a href="https://www.flaticon.com/"  title="Flaticon">www.flaticon.com</a>
+      </div>
+  </footer>
 
-    <!-- Service Worker for PWA -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            console.log('Service Worker registered with scope:', registration.scope);
-          }, function(err) {
-            console.log('Service Worker registration failed:', err);
-          });
+  <!-- Service Worker for PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(function(registration) {
+          console.log('Service Worker registered with scope:', registration.scope);
+        }, function(err) {
+          console.log('Service Worker registration failed:', err);
         });
-      }
-    </script>
+      });
+    }
+  </script>
 </body>
-<div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div><div>Icons made by <a href="https://www.flaticon.com/authors/hilmy-abiyyu-a" title="Hilmy Abiyyu A.">Hilmy Abiyyu A.</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div><div>Icons made by <a href="https://www.flaticon.com/authors/torticon" title="Torticon">Torticon</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div><div>Icons made by <a href="https://www.flaticon.com/authors/laura-reen" title="Laura Reen">Laura Reen</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div><div>Icons made by <a href="https://www.flaticon.com/authors/dokodemo" title="dokodemo">dokodemo</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div><div>Icons made by <a href="https://www.flaticon.com/authors/meaicon" title="meaicon">meaicon</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div><div>Icons made by <a href="https://www.flaticon.com/authors/altop7" title="ALTOP7">ALTOP7</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 </html>
