@@ -7,6 +7,7 @@ import json
 import calendar
 from .forms import PropertyForm, IncomeFormSet, ExpenseFormSet
 from dateutil.rrule import rrule, MONTHLY
+from dateutil.relativedelta import relativedelta
 
 def index(request):
     properties = Property.objects.all()
@@ -102,35 +103,61 @@ def get_monthly_summary_ajax(request):
     return JsonResponse(data)
 
 def get_chart_data(request):
+    # Get selected month/year (defaults to current)
     month_name = request.GET.get('month', datetime.now().strftime('%B'))
+    year = int(request.GET.get('year', datetime.now().year))
     
-    # Convert month name to number (e.g., 'May' → 5)
     try:
         month_number = list(calendar.month_name).index(month_name)
     except ValueError:
         month_number = datetime.now().month
 
-    year = int(request.GET.get('year', datetime.now().year))
+    # Find the earliest purchase date across all properties
+    earliest_purchase = Property.objects.order_by('purchase_date').first()
+    if earliest_purchase:
+        start_year = earliest_purchase.purchase_date.year
+        start_month = earliest_purchase.purchase_date.month
+    else:
+        start_year = datetime.now().year
+        start_month = 1
+
+    current_year = datetime.now().year
+    current_month = datetime.now().month
 
     monthly_labels = []
     monthly_income_data = []
     monthly_expense_data = []
 
-    # Generate last 6 months including selected month
-    for i in range(5, -1, -1):
-        m = month_number - i
-        y = year
-        if m < 1:
-            m += 12
-            y -= 1
-        m = m % 12 or 12  # Wrap around to December
+    # Generate data for every month from earliest purchase to current month/year
+    for year_iter in range(start_year, current_year + 1):
+        for month_iter in range(1, 13):
+            # Skip months after current month in current year
+            if year_iter == current_year and month_iter > current_month:
+                continue
 
-        income_total = sum(i.amount for i in Income.objects.filter(date__month=m, date__year=y))
-        expense_total = sum(e.amount for e in Expense.objects.filter(date__month=m, date__year=y))
+            # Skip months before earliest purchase date in start_year
+            if year_iter == start_year and month_iter < start_month:
+                continue
 
-        monthly_labels.append(calendar.month_abbr[m])
-        monthly_income_data.append(income_total)
-        monthly_expense_data.append(expense_total)
+            # Calculate totals for this month/year
+            income_total = sum(
+                i.amount for i in Income.objects.filter(
+                    date__year=year_iter,
+                    date__month=month_iter
+                )
+            )
+
+            expense_total = sum(
+                e.amount for e in Expense.objects.filter(
+                    date__year=year_iter,
+                    date__month=month_iter
+                )
+            )
+
+            # Add to datasets
+            monthly_labels.append(f"{calendar.month_abbr[month_iter - 1]} {year_iter}")
+            monthly_income_data.append(income_total)
+            monthly_expense_data.append(expense_total)
 
     return JsonResponse({
         'monthlyLabels': monthly_labels,
@@ -228,23 +255,40 @@ def add_property(request):
         if property_form.is_valid():
             property = property_form.save()
 
-            # Save rent as single entry
-            Income.objects.create(
-                property=property,
-                amount=rent,
-                description='Rental Income',
-                date=property.purchase_date
-            )
+            # Get purchase date
+            purchase_date = property.purchase_date
+            start_date = purchase_date.replace(day=1)  # Use 1st of the month
+            end_date = date.today().replace(day=1)
 
-            # Save mortgage as single entry
-            Expense.objects.create(
-                property=property,
-                amount=mortgage,
-                category='Mortgage',
-                date=property.purchase_date
-            )
+            current_date = start_date
+
+            # Generate monthly Income (Rent)
+            while current_date <= end_date:
+                Income.objects.create(
+                    property=property,
+                    amount=rent,
+                    description='Rental Income',
+                    date=current_date
+                )
+
+                # Move to next month
+                current_date += relativedelta(months=1)
+
+            current_date = start_date
+
+            # Generate monthly Expense (Mortgage)
+            while current_date <= end_date:
+                Expense.objects.create(
+                    property=property,
+                    amount=mortgage,
+                    category='Mortgage',
+                    date=current_date
+                )
+
+                current_date += relativedelta(months=1)
 
             return redirect('properties')
+
     else:
         property_form = PropertyForm()
 
