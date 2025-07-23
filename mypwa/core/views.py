@@ -103,67 +103,40 @@ def get_monthly_summary_ajax(request):
     return JsonResponse(data)
 
 def get_chart_data(request):
-    # Get selected month/year (defaults to current)
+    # Get selected month/year
     month_name = request.GET.get('month', datetime.now().strftime('%B'))
-    year = int(request.GET.get('year', datetime.now().year))
-    
     try:
         month_number = list(calendar.month_name).index(month_name)
     except ValueError:
         month_number = datetime.now().month
 
-    # Find the earliest purchase date across all properties
-    earliest_purchase = Property.objects.order_by('purchase_date').first()
-    if earliest_purchase:
-        start_year = earliest_purchase.purchase_date.year
-        start_month = earliest_purchase.purchase_date.month
-    else:
-        start_year = datetime.now().year
-        start_month = 1
+    year = int(request.GET.get('year', datetime.now().year))
 
-    current_year = datetime.now().year
-    current_month = datetime.now().month
+    # Get all income and expense entries
+    income_list = Income.objects.all()
+    expense_list = Expense.objects.all()
 
-    monthly_labels = []
-    monthly_income_data = []
-    monthly_expense_data = []
+    # Group by year-month
+    monthly_income = {}
+    monthly_expense = {}
 
-    # Generate data for every month from earliest purchase to current month/year
-    for year_iter in range(start_year, current_year + 1):
-        for month_iter in range(1, 13):
-            # Skip months after current month in current year
-            if year_iter == current_year and month_iter > current_month:
-                continue
+    for income in income_list:
+        key = income.date.strftime("%Y-%m")
+        monthly_income[key] = monthly_income.get(key, 0) + income.amount
 
-            # Skip months before earliest purchase date in start_year
-            if year_iter == start_year and month_iter < start_month:
-                continue
+    for expense in expense_list:
+        key = expense.date.strftime("%Y-%m")
+        monthly_expense[key] = monthly_expense.get(key, 0) + expense.amount
 
-            # Calculate totals for this month/year
-            income_total = sum(
-                i.amount for i in Income.objects.filter(
-                    date__year=year_iter,
-                    date__month=month_iter
-                )
-            )
+    # Get all unique year-month keys sorted
+    all_months = sorted(set(monthly_income.keys()) | set(monthly_expense.keys()))
 
-            expense_total = sum(
-                e.amount for e in Expense.objects.filter(
-                    date__year=year_iter,
-                    date__month=month_iter
-                )
-            )
-
-            # Add to datasets
-            monthly_labels.append(f"{calendar.month_abbr[month_iter - 1]} {year_iter}")
-            monthly_income_data.append(income_total)
-            monthly_expense_data.append(expense_total)
-
+    # Return all months, not just 6
     return JsonResponse({
-        'monthlyLabels': monthly_labels,
-        'monthlyIncomeData': monthly_income_data,
-        'monthlyExpenseData': monthly_expense_data,
-    })
+        'monthlyLabels': all_months,
+        'monthlyIncomeData': [monthly_income.get(m, 0) for m in all_months],
+        'monthlyExpenseData': [monthly_expense.get(m, 0) for m in all_months],
+    }, safe=False)
 
 
 

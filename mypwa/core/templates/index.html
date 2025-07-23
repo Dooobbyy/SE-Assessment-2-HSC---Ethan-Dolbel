@@ -73,71 +73,18 @@
     <!-- Middle Charts -->
     <div class="charts-section">
         <div class="card income-expense">
-            <p>Income vs Expense</p>
-            <div class="card income-expense">
-                <h3>Income vs Expense</h3>
-                <canvas id="incomeExpenseLineChart" width="400" height="300"></canvas>
-                <p id="chart-message" style="display: none; text-align: center; color: var(--color-muted);">
-                    No data available for this month
-                </p>
+            <h3>Income vs Expense</h3>
+            
+            <!-- Fixed-size chart container -->
+            <div style="position: relative; height: 400px;">
+                <canvas id="incomeExpenseLineChart"></canvas>
             </div>
+            
+            <p id="chart-message" style="display: none; text-align: center; color: var(--color-muted);">
+                No data available for this month
+            </p>
         </div>
-
-<script>
-let pieChartInstance = null;
-
-function renderPieChart(labels, values) {
-    const canvas = document.getElementById('propertyPerformancePieChart');
-    const ctx = canvas.getContext('2d');
-
-    // Clear old chart if it exists
-    const oldChart = Chart.getChart(canvas);
-    if (oldChart) oldChart.destroy();
-
-    // Show message if no data
-    const messageDiv = document.getElementById('pie-chart-message');
-    if (!labels.length || !values.length || values.every(v => v === 0)) {
-        messageDiv.style.display = 'block';
-        return;
-    } else {
-        messageDiv.style.display = 'none';
-    }
-
-    // Define colors
-    const colors = ['#00A3FF', '#0088CC', '#0070B2', '#D7D7D7'];
-
-    // Draw new chart
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Net Profit',
-                data: values,
-                backgroundColor: colors.slice(0, labels.length),
-                borderColor: '#1F1F28'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'bottom' }, title: { display: false } }
-        }
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    fetch('/ajax/pie-chart-data/?month=May')
-        .then(response => response.json())
-        .then(data => {
-            console.log("Pie chart data:", data);
-            renderPieChart(data.propertyLabels, data.propertyValues);
-        })
-        .catch(error => {
-            console.error("Failed to load pie chart data:", error);
-            document.getElementById('pie-chart-message').style.display = 'block';
-        });
-});
-</script>
+    </div>
 
 <!-- Alerts / Reminders -->
     <div class="card alerts">
@@ -149,164 +96,82 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
 <script>
-    function renderLineChart(labels, incomeData, expenseData) {
-        const ctx = document.getElementById('incomeExpenseLineChart').getContext('2d');
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('incomeExpenseLineChart').getContext('2d');
+    
+    // Hardcoded 12 months of data
+    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    // Sample data (replace with your actual values)
+    const incomeData = [5000, 5500, 6000, 5800, 6200, 6500, 
+                       6300, 6800, 7000, 6700, 7200, 7500];
+    
+    const expenseData = [4000, 4200, 4500, 4300, 4700, 4600, 
+                        4400, 4800, 4900, 4600, 5000, 5100];
 
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Income',
-                        data: incomeData,
-                        borderColor: '#00C896',
-                        backgroundColor: 'rgba(0, 200, 150, 0.2)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Expenses',
-                        data: expenseData,
-                        borderColor: '#E04F5F',
-                        backgroundColor: 'rgba(224, 79, 95, 0.2)',
-                        tension: 0.4,
-                        fill: true
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Income',
+                    data: incomeData,
+                    borderColor: '#00C896',
+                    backgroundColor: 'rgba(0, 200, 150, 0.2)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Expenses',
+                    data: expenseData,
+                    borderColor: '#E04F5F',
+                    backgroundColor: 'rgba(224, 79, 95, 0.2)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    position: 'top',
+                    labels: {
+                        padding: 20
                     }
-                ]
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            return `$${parseInt(context.raw).toLocaleString()}`;
+                        }
+                    }
+                }
             },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'top' }, title: { display: false } },
-                scales: { y: { beginAtZero: true } }
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 0,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => `$${value.toLocaleString()}`
+                    }
+                }
             }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        fetch('/ajax/chart-data/?month=May')
-            .then(response => response.json())
-            .then(data => {
-                renderLineChart(
-                    data.monthlyLabels,
-                    data.monthlyIncomeData,
-                    data.monthlyExpenseData
-                );
-            })
-            .catch(error => {
-                console.error("Failed to load chart data:", error);
-            });
-    });
-</script>
-
-<script>
-    function updateChart(month) {
-        fetch(`/ajax/chart-data/?month=${month}`)
-            .then(response => response.json())
-            .then(data => {
-                renderLineChart(
-                    data.monthlyLabels,
-                    data.monthlyIncomeData,
-                    data.monthlyExpenseData
-                );
-            })
-            .catch(error => console.error("Error loading chart data:", error));
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const monthSelect = document.getElementById('month-select');
-
-        monthSelect.addEventListener('change', function () {
-            const selectedMonth = monthSelect.value;
-            updateChart(selectedMonth);
-        });
-
-        // Load chart on page load
-        const defaultMonth = "{{ current_month }}";
-        if (defaultMonth) {
-            updateChart(defaultMonth);
         }
     });
-</script>
-
-<script>
-    let incomeChart = null;
-
-    function renderLineChart(labels, incomeData, expenseData) {
-        const canvas = document.getElementById('incomeExpenseLineChart');
-        const ctx = canvas.getContext('2d');
-
-        // Destroy old chart
-        if (incomeChart) {
-            incomeChart.destroy();
-        }
-
-        // Draw new chart
-        incomeChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Income',
-                        data: incomeData,
-                        borderColor: '#00C896',
-                        backgroundColor: 'rgba(0, 200, 150, 0.2)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Expenses',
-                        data: expenseData,
-                        borderColor: '#E04F5F',
-                        backgroundColor: 'rgba(224, 79, 95, 0.2)',
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'top' }, title: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-
-    function updateChart(month) {
-        fetch(`/ajax/chart-data/?month=${month}`)
-            .then(response => response.json())
-            .then(data => {
-                renderLineChart(
-                    data.monthlyLabels,
-                    data.monthlyIncomeData,
-                    data.monthlyExpenseData
-                );
-            })
-            .catch(error => console.error("Error loading chart data:", error));
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const monthSelect = document.getElementById('month-select');
-
-        // Set up dropdown change listener
-        monthSelect.addEventListener('change', function () {
-            const selectedMonth = monthSelect.value;
-            updateChart(selectedMonth);
-        });
-
-        // On page load, get selected month from dropdown
-        const defaultMonth = "{{ current_month }}";
-        const savedSelection = localStorage.getItem('selectedMonth');
-
-        // Use saved month if available, else use default
-        const initialMonth = savedSelection || defaultMonth;
-
-        // Set dropdown value
-        monthSelect.value = initialMonth;
-
-        // Load chart with correct month
-        updateChart(initialMonth);
-    });
+});
 </script>
 {% endblock %}
