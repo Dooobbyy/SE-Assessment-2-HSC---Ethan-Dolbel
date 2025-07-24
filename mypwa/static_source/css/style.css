@@ -14,6 +14,9 @@
   --color-card-text: #F8F2DC;   /* Light card text/headings */
   --color-divider: #D7D7D7;     /* Borders, divider lines */
   --color-card-bg: #303040;     /* Card backgrounds */
+  --color-gold-dark: #F8C471; /* Slightly darker gold */
+  --color-positive-dark: #00B359; /* Slightly darker positive */
+  --color-alert-dark: #F6A700; /* Slightly darker alert */
 }
 
 /* === Reset & Base Styles === */
@@ -128,6 +131,8 @@ body {
     padding: 20px;
     background-color: var(--color-bg-main);
     margin-left: 250px; /* Match the sidebar width */
+    max-width: 1200px; /* Optional: Limit the width for better responsiveness */
+    margin: 0 auto; /* Center the main content */
 }
 
 /* === Cards === */
@@ -259,14 +264,6 @@ body {
   margin-bottom: 8px;
 }
 
-.pie-chart-top-property {
-    background-color: #00A3FF; /* Bright blue */
-}
-
-.pie-chart-other-properties {
-    background-color: #D7D7D7; /* Light gray */
-}
-
 /* Properties Page Styles */
 .properties-page {
     padding: 20px;
@@ -378,4 +375,70 @@ body {
     height: 100%;
     max-width: 100%;
     max-height: 400px;
+}
+
+/* === Properties Page Styles === */
+.properties-page {
+    padding: 20px;
+}
+
+/* Add spacing for the "Add New Property" button */
+.add-property-button-container {
+    margin-top: 10px; /* Adjust this value to move the button down */
+}
+
+/* === Button Styles === */
+.btn-accent,
+.btn-positive,
+.btn-alert {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1em;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.1s ease;
+    margin-left: 10px; /* Spacing between buttons */
+    font-weight: bold; /* Bold the button text */
+    border: none; /* Remove border for cleaner look */
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); /* Drop shadow for 3D effect */
+    position: relative; /* For positioning adjustments */
+}
+
+.btn-accent {
+    background-color: var(--color-gold);
+    color: #000; /* Default text color (black) */
+}
+
+.btn-positive {
+    background-color: var(--color-positive);
+    color: #000; /* Default text color (black) */
+}
+
+.btn-alert {
+    background-color: var(--color-alert);
+    color: #000; /* Default text color (black) */
+}
+
+.button-group {
+    display: flex;
+    gap: 10px; /* Spacing between buttons */
+}
+
+/* Hover effects - text turns white and pressed-in effect */
+.btn-accent:hover,
+.btn-positive:hover,
+.btn-alert:hover {
+    color: white; /* Text turns white on hover */
+    transform: translateY(2px); /* Move down slightly */
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2); /* Reduce shadow for pressed effect */
+}
+
+/* Active/pressed state */
+.btn-accent:active,
+.btn-positive:active,
+.btn-alert:active {
+    color: white; /* Keep text white when actively pressed */
+    transform: translateY(4px); /* Move down more when actively pressed */
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0.2); /* Remove shadow when pressed */
 }

@@ -1,11 +1,20 @@
+# core/urls.py
 from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('ajax/month-summary/', views.get_monthly_summary_ajax, name='ajax_month_summary'),
-    path('ajax/chart-data/', views.get_chart_data, name='ajax_chart_data'),
-    path('ajax/pie-chart-data/', views.get_pie_chart_data, name='ajax_pie_chart_data'),
-    path('properties/', views.properties_view, name='properties'),
+    path('', views.home, name='index'),
+    path('properties/', views.properties, name='properties'),
     path('properties/add/', views.add_property, name='add_property'),
+    path('properties/<int:property_id>/', views.property_detail, name='property_detail'),
+    path('properties/<int:property_id>/edit/', views.edit_property, name='edit_property'),
+    path('transactions/add/', views.add_transaction, name='add_transaction'),
+    path('transactions/bulk/', views.add_bulk_transaction, name='add_bulk_transaction'),
+    path('transactions/log/', views.transaction_log, name='transaction_log'),
+    
+    # Tools URLs
+    path('tools/', views.tools_home, name='tools_home'),
+    path('tools/value-calculator/', views.property_value_calculator, name='value_calculator'),
+    path('tools/scenario-modeling/', views.scenario_modeling, name='scenario_modeling'),
+    path('tools/trend-tracking/', views.trend_tracking, name='trend_tracking'),
 ]

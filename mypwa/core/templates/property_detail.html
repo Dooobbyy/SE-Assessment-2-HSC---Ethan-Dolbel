@@ -1,0 +1,88 @@
+<!-- templates/property_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ property.address }} - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="properties-page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>{{ property.address }}</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'add_transaction' %}?property={{ property.id }}" class="btn-accent">Add Transaction</a>
+                <a href="{% url 'properties' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Properties</a>
+            </div>
+        </div>
+
+        <!-- Property Summary Cards -->
+        <div class="stats-grid">
+            <div class="card">
+                <h3>Property Type</h3>
+                <h2>{{ property.get_property_type_display }}</h2>
+            </div>
+            
+            <div class="card">
+                <h3>Total Income</h3>
+                <h2 style="color: var(--color-positive);">${{ total_income|floatformat:2 }}</h2>
+            </div>
+            
+            <div class="card">
+                <h3>Total Expenses</h3>
+                <h2 style="color: var(--color-negative);">${{ total_expenses|floatformat:2 }}</h2>
+            </div>
+            
+            <div class="card">
+                <h3>Net Income</h3>
+                <h2 style="color: {% if net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                    ${{ net_income|floatformat:2 }}
+                </h2>
+            </div>
+        </div>
+
+        <!-- Property Details -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Property Details</h3>
+            <p><strong>Purchase Date:</strong> {{ property.purchase_date|date:"M d, Y" }}</p>
+            <p><strong>Monthly Rent:</strong> ${{ property.monthly_rent }}</p>
+            <p><strong>Monthly Mortgage:</strong> ${{ property.monthly_mortgage }}</p>
+        </div>
+
+        <!-- Transactions Section -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Transactions</h3>
+                <a href="{% url 'add_transaction' %}?property={{ property.id }}" class="btn-accent">Add Transaction</a>
+            </div>
+            
+            {% if transactions %}
+                <div class="property-table-container">
+                    <table class="property-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.date|date:"M d, Y" }}</td>
+                                <td>{{ transaction.get_transaction_type_display }}</td>
+                                <td>{{ transaction.description|default:"-" }}</td>
+                                <td style="color: {% if transaction.transaction_type in 'rental_income,additional_income,other_income' %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                                    {% if transaction.transaction_type in 'maintenance,taxes,insurance,other_expense' %}-{% endif %}${{ transaction.amount }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No transactions found for this property.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

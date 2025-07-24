@@ -1,0 +1,110 @@
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <h1>Real Estate Financial Dashboard</h1>
+
+    <!-- Summary Cards Section -->
+    <div class="stats-grid">
+        <!-- Card 1: Total Income -->
+        <div class="card">
+            <h3>Total Income</h3>
+            <h2>${{ total_income|floatformat:2 }}</h2>
+        </div>
+
+        <!-- Card 2: Total Expenses -->
+        <div class="card">
+            <h3>Total Expenses</h3>
+            <h2>${{ total_expenses|floatformat:2 }}</h2>
+        </div>
+
+        <!-- Card 3: Net Profit/Loss -->
+        <div class="card">
+            <h3>Net Profit/Loss</h3>
+            <h2 style="color: {% if net_profit_loss >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                ${% if net_profit_loss >= 0 %}+{% endif %}{{ net_profit_loss|floatformat:2 }}
+            </h2>
+        </div>
+    </div>
+
+    <!-- Line Chart Section -->
+    <div class="charts-section">
+        <div class="card">
+            <h3>Monthly Income vs. Expenses</h3>
+            <canvas id="incomeExpenseLineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="alerts">
+        <ul>
+            <li><strong>Alert:</strong> Low cash flow detected in June.</li>
+            <li><strong>Reminder:</strong> Property taxes due next month.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    // Get the data from Django context
+    const months = {{ months|safe }};
+    const incomeData = {{ income_data }};
+    const expenseData = {{ expense_data }};
+
+    // Create the chart
+    const ctx = document.getElementById('incomeExpenseLineChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+         {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Income',
+                     incomeData,
+                    borderColor: 'green',
+                    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                    tension: 0.1,
+                    fill: false
+                },
+                {
+                    label: 'Expenses',
+                     expenseData.map(expense => -expense),
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                    tension: 0.1,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': $';
+                            }
+                            label += Math.abs(context.parsed.y).toLocaleString();
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

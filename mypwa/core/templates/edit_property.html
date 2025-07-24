@@ -1,0 +1,136 @@
+<!-- templates/edit_property.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Property - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Edit Property</h1>
+            <a href="{% url 'properties' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Properties</a>
+        </div>
+        
+       <form method="post" class="card">
+            {% csrf_token %}
+            
+            <!-- Display non-field errors -->
+            {% if form.non_field_errors %}
+                <div class="alert" style="background-color: var(--color-negative); color: white; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ form.address.id_for_label }}">Property Address:</label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.address.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.purchase_date.id_for_label }}">Purchase Date:</label>
+                {{ form.purchase_date }}
+                {% if form.purchase_date.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.purchase_date.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.property_type.id_for_label }}">Property Type:</label>
+                {{ form.property_type }}
+                {% if form.property_type.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.property_type.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.monthly_rent.id_for_label }}">Monthly Rent ($):</label>
+                {{ form.monthly_rent }}
+                {% if form.monthly_rent.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.monthly_rent.errors }}</div>
+                {% endif %}
+                <small style="color: var(--color-muted);">{{ form.monthly_rent.help_text }}</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.monthly_mortgage.id_for_label }}">Monthly Mortgage ($):</label>
+                {{ form.monthly_mortgage }}
+                {% if form.monthly_mortgage.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.monthly_mortgage.errors }}</div>
+                {% endif %}
+                <small style="color: var(--color-muted);">{{ form.monthly_mortgage.help_text }}</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.purchase_price.id_for_label }}">Purchase Price ($):</label>
+                {{ form.purchase_price }}
+                {% if form.purchase_price.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.purchase_price.errors }}</div>
+                {% endif %}
+                <small style="color: var(--color-muted);">{{ form.purchase_price.help_text }}</small>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <button type="submit" class="btn-accent">Update Property</button>
+                <button type="button" class="btn-alert" onclick="confirmDelete()">Delete Property</button>
+                <a href="{% url 'properties' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
+            </div>
+        </form>
+        
+        <!-- Property Summary Card -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>Property Summary</h3>
+            <p><strong>Current Total Income:</strong> <span style="color: var(--color-positive);">${{ property.total_income|floatformat:2 }}</span></p>
+            <p><strong>Current Total Expenses:</strong> <span style="color: var(--color-negative);">${{ property.total_expenses|floatformat:2 }}</span></p>
+            <p><strong>Current Net Income:</strong> 
+                <span style="color: {% if property.net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                    ${{ property.net_income|floatformat:2 }}
+                </span>
+            </p>
+            <p><strong>Associated Transactions:</strong> {{ property.transaction_set.count }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div class="card" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 500px; width: 90%;">
+        <h2 style="margin-top: 0; color: var(--color-negative);">⚠️ Delete Property</h2>
+        <p>Are you sure you want to delete <strong>{{ property.address }}</strong>?</p>
+        <p>This action will permanently delete:</p>
+        <ul>
+            <li>The property record</li>
+            <li>All associated transactions ({{ property.transaction_set.count }} transactions)</li>
+            <li>All financial history for this property</li>
+        </ul>
+        <p><strong>This cannot be undone!</strong></p>
+        
+        <form method="post" style="display: flex; gap: 10px; margin-top: 20px;">
+            {% csrf_token %}
+            <input type="hidden" name="delete" value="true">
+            <button type="submit" class="btn-negative" style="background-color: var(--color-negative);">Yes, Delete Property</button>
+            <button type="button" class="btn-accent" onclick="closeModal()">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmDelete() {
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// Close modal if user clicks outside of it
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target == modal) {
+        closeModal();
+    }
+}
+</script>
+{% endblock %}

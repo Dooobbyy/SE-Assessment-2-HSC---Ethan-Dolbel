@@ -1,0 +1,123 @@
+<!-- templates/transaction_log.html -->
+{% extends 'base.html' %}
+
+{% block title %}Transaction Log - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="properties-page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Transaction Log</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'add_transaction' %}" class="btn-accent">Add Transaction</a>
+                <a href="{% url 'add_bulk_transaction' %}" class="btn-alert">Bulk Transaction</a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Filter Transactions</h3>
+            <form method="get" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: end;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="type">Transaction Type:</label>
+                    <select name="type" id="type" class="form-control">
+                        <option value="">All Types</option>
+                        {% for value, display in transaction_type_choices %}
+                            <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="property">Property:</label>
+                    <select name="property" id="property" class="form-control">
+                        <option value="">All Properties</option>
+                        {% for prop in properties %}
+                            <option value="{{ prop.id }}" {% if selected_property|add:"0" == prop.id %}selected{% endif %}>{{ prop.address }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn-accent">Filter</button>
+                    <a href="{% url 'transaction_log' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Transaction Log Table -->
+        {% if transactions %}
+            <div class="card">
+                <div class="property-table-container">
+                    <table class="property-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Property</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.date|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if transaction.property %}
+                                        <a href="{% url 'property_detail' transaction.property.id %}" style="color: var(--color-gold); text-decoration: none;">
+                                            {{ transaction.property.address|truncatechars:30 }}
+                                        </a>
+                                    {% else %}
+                                        <span style="color: var(--color-muted);">No Property</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ transaction.get_transaction_type_display }}</td>
+                                <td>{{ transaction.description|default:"-"|truncatechars:50 }}</td>
+                                <td style="color: {% if transaction.transaction_type in 'rental_income,additional_income,other_income' %}var(--color-positive){% else %}var(--color-negative){% endif %}; font-weight: bold;">
+                                    {% if transaction.transaction_type in 'maintenance,taxes,insurance,other_expense' %}-{% endif %}${{ transaction.amount|floatformat:2 }}
+                                </td>
+                                <td>{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Summary Stats -->
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-divider);">
+                    <div style="display: flex; justify-content: space-around; text-align: center;">
+                        <div>
+                            <h4 style="margin: 0; color: var(--color-muted);">Total Transactions</h4>
+                            <p style="margin: 5px 0 0 0; font-size: 1.5em;">{{ total_transactions }}</p>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: var(--color-muted);">Total Income</h4>
+                            <p style="margin: 5px 0 0 0; font-size: 1.5em; color: var(--color-positive);">+${{ total_income|floatformat:2 }}</p>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: var(--color-muted);">Total Expenses</h4>
+                            <p style="margin: 5px 0 0 0; font-size: 1.5em; color: var(--color-negative);">-${{ total_expenses|floatformat:2 }}</p>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: var(--color-muted);">Net</h4>
+                            <p style="margin: 5px 0 0 0; font-size: 1.5em; color: {% if net_amount >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                                ${{ net_amount|floatformat:2 }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card" style="text-align: center; padding: 40px;">
+                <h3>No transactions found</h3>
+                <p>There are no transactions matching your current filters.</p>
+                <div style="margin-top: 20px;">
+                    <a href="{% url 'add_transaction' %}" class="btn-accent">Add Your First Transaction</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

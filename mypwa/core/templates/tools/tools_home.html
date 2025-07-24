@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Tools - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="properties-page">
+        <h1>Real Estate Tools</h1>
+        
+        <div class="stats-grid">
+            <div class="card">
+                <h3>Value Calculator</h3>
+                <p>Calculate current and future property values with custom growth rates.</p>
+                <a href="{% url 'value_calculator' %}" class="btn-accent" style="display: inline-block; margin-top: 10px;">Start Calculator</a>
+            </div>
+            
+            <div class="card">
+                <h3>Scenario Modeling</h3>
+                <p>Compare different market scenarios and their impact on your investments.</p>
+                <a href="{% url 'scenario_modeling' %}" class="btn-positive" style="display: inline-block; margin-top: 10px;">Model Scenarios</a>
+            </div>
+            
+            <div class="card">
+                <h3>Trend Tracking</h3>
+                <p>Track your portfolio performance and compare property values over time.</p>
+                <a href="{% url 'trend_tracking' %}" class="btn-alert" style="display: inline-block; margin-top: 10px;">View Trends</a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>About These Tools</h3>
+            <p>These tools help you predict and analyze property values based on various market scenarios. While they provide valuable insights, please remember that real estate markets are complex and influenced by many factors beyond what these calculators can model.</p>
+            <p><strong>Disclaimer:</strong> These predictions are estimates only and should not be considered financial advice.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

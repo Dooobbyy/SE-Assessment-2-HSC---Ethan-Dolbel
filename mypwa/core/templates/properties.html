@@ -1,38 +1,75 @@
-{% extends "base.html" %}
+<!-- templates/properties.html -->
+{% extends 'base.html' %}
+
+{% block title %}Properties - Real Estate Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="properties-page">
-    <h1>Properties</h1>
+<div class="main-content">
+    <div class="properties-page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Properties</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'add_property' %}" class="btn-accent">Add New Property</a>
+                <a href="{% url 'add_transaction' %}" class="btn-positive">Add Transaction</a>
+                <a href="{% url 'add_bulk_transaction' %}" class="btn-alert">Bulk Transaction</a>
+                <a href="{% url 'transaction_log' %}" class="btn-secondary">View Log</a>
+            </div>
+        </div>
 
-    <div class="actions">
-        <a href="{% url 'add_property' %}" class="btn btn-primary">+ Add Property</a>
+        {% if properties %}
+            <div class="property-table-container">
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th>Property Address</th>
+                            <th>Type</th>
+                            <th>Purchase Date</th>
+                            <th>Monthly Rent</th>
+                            <th>Monthly Mortgage</th>
+                            <th>Total Income</th>
+                            <th>Total Expenses</th>
+                            <th>Net Income</th>
+                        </tr>
+                    </thead>
+                <tbody>
+                    {% for prop_data in properties %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <a href="{% url 'property_detail' prop_data.property.id %}" 
+                                style="color: var(--color-gold); text-decoration: none;">
+                                    {{ prop_data.property.address }}
+                                </a>
+                                <a href="{% url 'edit_property' prop_data.property.id %}" 
+                                style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;" 
+                                title="Edit Property">
+                                    ✏️
+                                </a>
+                            </div>
+                        </td>
+                        <td>{{ prop_data.property.get_property_type_display }}</td>
+                        <td>{{ prop_data.property.purchase_date|date:"M d, Y" }}</td>
+                        <td>${{ prop_data.property.monthly_rent }}</td>
+                        <td>${{ prop_data.property.monthly_mortgage }}</td>
+                        <td style="color: var(--color-positive);">${{ prop_data.total_income|floatformat:2 }}</td>
+                        <td style="color: var(--color-negative);">${{ prop_data.total_expenses|floatformat:2 }}</td>
+                        <td style="color: {% if prop_data.net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                            ${{ prop_data.net_income|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card" style="text-align: center; padding: 40px; margin-top: 20px;">
+                <h3>No properties found</h3>
+                <p>You haven't added any properties yet.</p>
+                <div style="margin-top: 20px;">
+                    <a href="{% url 'add_property' %}" class="btn-accent">Add Your First Property</a>
+                </div>
+            </div>
+        {% endif %}
     </div>
-
-    <table class="property-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th>Purchase Price</th>
-                <th>Rent</th>
-                <th>Mortgage</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for prop in properties %}
-                <tr>
-                    <td>{{ prop.name }}</td>
-                    <td>{{ prop.address }}</td>
-                    <td>${{ prop.purchase_price }}</td>
-                    <td>${{ prop.rent }}</td>
-                    <td>${{ prop.mortgage }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align: center;">No properties found.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
 {% endblock %}

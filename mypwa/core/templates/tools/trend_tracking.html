@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Trend Tracking - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="properties-page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Portfolio Trend Tracking</h1>
+            <a href="{% url 'tools_home' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
+        </div>
+        
+        {% if properties %}
+        <div class="stats-grid">
+            <div class="card">
+                <h4>Total Investment</h4>
+                <h2>${{ total_investment|floatformat:2 }}</h2>
+            </div>
+            
+            <div class="card">
+                <h4>Current Portfolio Value</h4>
+                <h2 style="color: var(--color-gold);">${{ total_current_value|floatformat:2 }}</h2>
+            </div>
+            
+            <div class="card">
+                <h4>Overall ROI</h4>
+                <h2 style="color: {% if portfolio_roi >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
+                    {{ portfolio_roi|floatformat:2 }}%
+                </h2>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Property Performance</h3>
+            <div style="overflow-x: auto;">
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Purchase Price</th>
+                            <th>Current Value</th>
+                            <th>Value Change</th>
+                            <th>ROI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in portfolio_data %}
+                        <tr>
+                            <td>{{ data.property.address }}</td>
+                            <td>${{ data.property.purchase_price|floatformat:2 }}</td>
+                            <td>${{ data.current_value|floatformat:2 }}</td>
+                            <td style="color: {% if data.current_value > data.property.purchase_price %}var(--color-positive){% else %}var(--color-negative){% endif %};">
+                                ${{ data.current_value|add:-data.property.purchase_price|floatformat:2 }}
+                            </td>
+                            <td style="color: {% if data.roi >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
+                                {{ data.roi|floatformat:2 }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 40px;">
+            <h3>No Properties with Purchase Prices</h3>
+            <p>To track trends, you need to add properties with purchase prices.</p>
+            <a href="{% url 'add_property' %}" class="btn-accent" style="margin-top: 20px;">Add Property with Purchase Price</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

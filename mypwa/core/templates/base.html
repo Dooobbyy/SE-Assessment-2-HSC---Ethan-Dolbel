@@ -32,7 +32,7 @@
           <li><a href="{% url 'properties' %}"><img src="{% static 'images/009-house-with-money-symbol.png' %}" alt="Properties icon" width=20 height=20>Properties</a></li>
           <li><a href="{% url 'index' %}"><img src="{% static 'images/007-money.png' %}" alt="Income and Expenses icon" width=20 height=20>Income & Expenses</a></li>
           <li><a href="{% url 'index' %}"><img src="{% static 'images/004-sheet.png' %}" alt="Reports icon" width=20 height=20>Reports</a></li>
-          <li><a href="{% url 'index' %}"><img src="{% static 'images/008-wrench-simple.png' %}" alt="Tools icon" width=20 height=20>Tools</a></li>
+          <li><a href="{% url 'tools_home' %}"><img src="{% static 'images/008-wrench-simple.png' %}" alt="Tools icon" width=20 height=20>Tools</a></li>
           <li><a href="{% url 'index' %}"><img src="{% static 'images/005-setting.png' %}" alt="Settings icon" width=20 height=20>Settings</a></li>
           <li><a href="{% url 'index' %}"><img src="{% static 'images/001-user.png' %}" alt="Logout icon" width=20 height=20>Logout</a></li>
       </ul>
@@ -40,6 +40,15 @@
 
   <!-- Main Content -->
   <div class="main-content">
+    {% if messages %}
+        <div style="padding: 10px; margin: 10px 0; border-radius: 4px;">
+            {% for message in messages %}
+                <div class="alert" style="background-color: {% if message.tags == 'success' %}var(--color-positive){% elif message.tags == 'error' %}var(--color-negative){% else %}var(--color-alert){% endif %}; color: white; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
       {% block content %}
       {% endblock %}
   </div>
@@ -58,18 +67,5 @@
           from <a href="https://www.flaticon.com/"  title="Flaticon">www.flaticon.com</a>
       </div>
   </footer>
-
-  <!-- Service Worker for PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-          console.log('Service Worker registered with scope:', registration.scope);
-        }, function(err) {
-          console.log('Service Worker registration failed:', err);
-        });
-      });
-    }
-  </script>
 </body>
 </html>

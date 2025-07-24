@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Value Calculator - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="properties-page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Property Value Calculator</h1>
+            <a href="{% url 'tools_home' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
+        </div>
+        
+        <div class="card">
+            <h3>Calculate Property Value Projections</h3>
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.property.id_for_label }}">Select Property:</label>
+                    {{ form.property }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.years_ahead.id_for_label }}">Years to Project:</label>
+                    {{ form.years_ahead }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.annual_growth_rate.id_for_label }}">Annual Growth Rate (%):</label>
+                    {{ form.annual_growth_rate }}
+                    <small style="color: var(--color-muted);">Enter a positive number for growth or negative for decline</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.scenario_name.id_for_label }}">Scenario Name (Optional):</label>
+                    {{ form.scenario_name }}
+                </div>
+                
+                <button type="submit" class="btn-accent">Calculate Projection</button>
+            </form>
+        </div>
+        
+        {% if show_results %}
+        <div class="card">
+            <h3>{{ scenario_name }}</h3>
+            
+            <div class="stats-grid">
+                <div class="card">
+                    <h4>Property</h4>
+                    <h2>{{ property.address }}</h2>
+                </div>
+                
+                <div class="card">
+                    <h4>Purchase Price</h4>
+                    <h2>${{ property.purchase_price|floatformat:2 }}</h2>
+                </div>
+                
+                <div class="card">
+                    <h4>Current Value</h4>
+                    <h2 style="color: var(--color-positive);">${{ current_value|floatformat:2 }}</h2>
+                </div>
+                
+                <div class="card">
+                    <h4>Projected Value ({{ years_ahead }} years)</h4>
+                    <h2 style="color: var(--color-gold);">${{ future_value|floatformat:2 }}</h2>
+                </div>
+                
+                <div class="card">
+                    <h4>Return on Investment</h4>
+                    <h2 style="color: {% if roi >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
+                        {{ roi|floatformat:2 }}%
+                    </h2>
+                </div>
+            </div>
+            
+            <h4>Value History (Last 5 Years)</h4>
+            <div style="overflow-x: auto;">
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Estimated Value</th>
+                            <th>Growth</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in value_history %}
+                        <tr>
+                            <td>{{ item.year }}</td>
+                            <td>${{ item.value|floatformat:2 }}</td>
+                            <td>
+                                {% if forloop.first %}
+                                    -
+                                {% else %}
+                                    {% with prev_value=value_history|slice:forloop.counter0|last %}
+                                        {% if prev_value %}
+                                            {% widthratio item.value 1 1 as current %}
+                                            {% widthratio prev_value.value 1 1 as previous %}
+                                            {% if previous > 0 %}
+                                                {% widthratio current previous 100 as percentage %}
+                                                +{{ percentage|add:"-100"|floatformat:2 }}%
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
