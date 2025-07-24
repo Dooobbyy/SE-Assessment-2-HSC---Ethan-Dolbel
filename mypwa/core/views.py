@@ -138,57 +138,6 @@ def get_chart_data(request):
         'monthlyExpenseData': [monthly_expense.get(m, 0) for m in all_months],
     }, safe=False)
 
-
-
-
-def get_pie_chart_data(request):
-    month_name = request.GET.get('month', datetime.now().strftime('%B'))
-
-    try:
-        month_number = list(calendar.month_name).index(month_name)
-    except ValueError:
-        month_number = datetime.now().month
-
-    year = int(request.GET.get('year', datetime.now().year))
-
-    properties = Property.objects.all()
-    combined = []
-
-    for prop in properties:
-        income_total = sum(i.amount for i in Income.objects.filter(property=prop, date__month=month_number, date__year=year))
-        expense_total = sum(e.amount for e in Expense.objects.filter(property=prop, date__month=month_number, date__year=year))
-        profit = round(float(income_total - expense_total), 2)
-        combined.append((prop.name, profit))
-
-    # Sort descending by profit
-    combined.sort(key=lambda x: x[1], reverse=True)
-
-    labels = []
-    values = []
-
-    if len(combined) >= 1:
-        labels.append(combined[0][0])
-        values.append(combined[0][1])
-
-    if len(combined) >= 2:
-        labels.append(combined[1][0])
-        values.append(combined[1][1])
-
-    if len(combined) >= 3:
-        labels.append(combined[2][0])
-        values.append(combined[2][1])
-
-    if len(combined) > 3:
-        rest_sum = sum(val for name, val in combined[3:])
-        labels.append("Other Properties")
-        values.append(round(rest_sum, 2))
-
-    return JsonResponse({
-        'propertyLabels': labels or ['No Properties'],
-        'propertyValues': values or [0]
-    })
-
-
 def properties_view(request):
     properties = Property.objects.all()
     property_list = []
@@ -222,20 +171,19 @@ def properties_view(request):
 def add_property(request):
     if request.method == 'POST':
         property_form = PropertyForm(request.POST)
-        rent = float(request.POST.get('rent', 0))
-        mortgage = float(request.POST.get('mortgage', 0))
 
         if property_form.is_valid():
             property = property_form.save()
 
-            # Get purchase date
+            rent = property.monthly_rent
+            mortgage = property.monthly_mortgage
             purchase_date = property.purchase_date
-            start_date = purchase_date.replace(day=1)  # Use 1st of the month
+            start_date = purchase_date.replace(day=1)
             end_date = date.today().replace(day=1)
 
             current_date = start_date
 
-            # Generate monthly Income (Rent)
+            # Generate Income (Rent)
             while current_date <= end_date:
                 Income.objects.create(
                     property=property,
@@ -243,13 +191,11 @@ def add_property(request):
                     description='Rental Income',
                     date=current_date
                 )
-
-                # Move to next month
                 current_date += relativedelta(months=1)
 
             current_date = start_date
 
-            # Generate monthly Expense (Mortgage)
+            # Generate Expense (Mortgage)
             while current_date <= end_date:
                 Expense.objects.create(
                     property=property,
@@ -257,7 +203,6 @@ def add_property(request):
                     category='Mortgage',
                     date=current_date
                 )
-
                 current_date += relativedelta(months=1)
 
             return redirect('properties')

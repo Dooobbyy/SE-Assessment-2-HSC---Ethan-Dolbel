@@ -54,15 +54,21 @@
 
         <!-- Rent -->
         <div class="form-group">
-            <label>Rent (Monthly)</label>
-            <input type="number" name="rent" required step="any" min="0">
-        </div>
+        <label for="id_monthly_rent">Monthly Rent</label>
+        {{ property_form.monthly_rent }}
+        {% if property_form.monthly_rent.errors %}
+            <div class="form-error">{{ property_form.monthly_rent.errors }}</div>
+        {% endif %}
+    </div>
 
-        <!-- Mortgage -->
-        <div class="form-group">
-            <label>Mortgage (Monthly)</label>
-            <input type="number" name="mortgage" required step="any" min="0">
-        </div>
+    <!-- Mortgage -->
+    <div class="form-group">
+        <label for="id_monthly_mortgage">Monthly Mortgage</label>
+        {{ property_form.monthly_mortgage }}
+        {% if property_form.monthly_mortgage.errors %}
+            <div class="form-error">{{ property_form.monthly_mortgage.errors }}</div>
+        {% endif %}
+    </div>
 
         <button type="submit" class="btn btn-primary">Save Property</button>
     </form>

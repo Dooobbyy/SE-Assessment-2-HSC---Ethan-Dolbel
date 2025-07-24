@@ -1,11 +1,16 @@
 from django.db import models
 
+# models.py
+from django.db import models
+
 class Property(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     address = models.TextField()
     purchase_date = models.DateField()
-    purchase_price = models.DecimalField(max_digits=12, decimal_places=2)
-    current_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
+    current_value = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    monthly_mortgage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 class Income(models.Model):
     property = models.ForeignKey(Property, on_delete=models.CASCADE)

@@ -5,9 +5,14 @@ from .models import Property, Income, Expense
 class PropertyForm(forms.ModelForm):
     class Meta:
         model = Property
-        fields = ['name', 'address', 'purchase_date', 'purchase_price', 'current_value']
+        fields = [
+            'name', 'address', 'purchase_date', 'purchase_price',
+            'current_value', 'monthly_rent', 'monthly_mortgage'
+        ]
         widgets = {
-            'purchase_date': forms.DateInput(attrs={'type': 'date'})
+            'purchase_date': forms.DateInput(attrs={'type': 'date'}),
+            'monthly_rent': forms.NumberInput(attrs={'step': 'any', 'min': '0'}),
+            'monthly_mortgage': forms.NumberInput(attrs={'step': 'any', 'min': '0'}),
         }
 
 # IncomeFormSet → includes amount and date
