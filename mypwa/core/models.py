@@ -34,6 +34,91 @@ class Property(models.Model):
     def is_owned_outright(self):
         return self.property_type == 'owned_outright'
     
+        # Calculate total income for the property
+    def calculate_total_income(self):
+        from django.db.models import Sum
+        
+        total_income = 0
+        
+        # Debugging: Print property details
+        print(f"Calculating income for {self.address}")
+        print(f"Monthly Rent: ${self.monthly_rent}")
+        
+        # Base rental income
+        if self.property_type in ['rental', 'owned_outright'] and self.monthly_rent > 0:
+            today = date.today()
+            purchase_date = self.purchase_date
+            months_owned = (today.year - purchase_date.year) * 12 + (today.month - purchase_date.month)
+            
+            # Debugging: Print months owned
+            print(f"Months Owned: {months_owned}")
+            
+            if months_owned > 0:
+                total_income += self.monthly_rent * months_owned
+                print(f"Base Rental Income: ${total_income}")
+        
+        # Additional transactions for this property
+        property_income = Transaction.objects.filter(
+            property=self,
+            transaction_type__in=['rental_income', 'additional_income', 'other_income']
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        # Debugging: Print additional income
+        print(f"Additional Income: ${property_income}")
+        
+        total_income += property_income
+        print(f"Total Income: ${total_income}")
+        
+        return float(total_income)
+    
+    # Calculate total expenses for the property
+    def calculate_total_expenses(self):
+        from django.db.models import Sum
+        
+        total_expenses = 0
+        
+        # Debugging: Print property details
+        print(f"Calculating expenses for {self.address}")
+        print(f"Mortgage: ${self.monthly_mortgage}")
+        print(f"Property Type: {self.property_type}")
+        
+        # Base mortgage expense - ONLY for properties that have mortgages
+        # Owned Outright properties should not have mortgage expenses
+        if self.property_type != 'owned_outright' and self.monthly_mortgage > 0:
+            today = date.today()
+            purchase_date = self.purchase_date
+            months_owned = (today.year - purchase_date.year) * 12 + (today.month - purchase_date.month)
+            
+            # NO adjustment for current month - keep the original working calculation
+            # months_owned remains as is, no subtraction
+            
+            # Debugging: Print months owned
+            print(f"Months Owned: {months_owned}")
+            
+            if months_owned > 0:
+                total_expenses += self.monthly_mortgage * months_owned
+                print(f"Base Mortgage Expense: ${total_expenses}")
+        else:
+            print("No mortgage expense added (owned outright or no mortgage)")
+        
+        # Additional expense transactions for this property
+        property_expenses = Transaction.objects.filter(
+            property=self,
+            transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense']
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        # Debugging: Print additional expenses
+        print(f"Additional Expenses: ${property_expenses}")
+        
+        total_expenses += property_expenses
+        print(f"Total Expenses: ${total_expenses}")
+        
+        return float(total_expenses)
+    
+    # Calculate net income for the property
+    def calculate_net_income(self):
+        return self.calculate_total_income() - self.calculate_total_expenses()
+    
     # Property value prediction methods
     def calculate_current_value(self, annual_growth_rate=0.03):
         """Calculate current estimated value based on purchase price and growth rate"""

@@ -63,7 +63,16 @@
                         <tbody>
                             {% for transaction in transactions %}
                             <tr>
-                                <td>{{ transaction.date|date:"M d, Y" }}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        {{ transaction.date|date:"M d, Y" }}
+                                        <a href="{% url 'edit_transaction' transaction.id %}" 
+                                        style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;" 
+                                        title="Edit Transaction">
+                                            ✏️
+                                        </a>
+                                    </div>
+                                </td>
                                 <td>
                                     {% if transaction.property %}
                                         <a href="{% url 'property_detail' transaction.property.id %}" style="color: var(--color-gold); text-decoration: none;">

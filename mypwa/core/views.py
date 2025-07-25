@@ -75,20 +75,16 @@ def properties(request):
     # Get all properties
     all_properties = Property.objects.all().order_by('-purchase_date')
     
-    # Calculate financial data for each property
+    # Prepare data for the template
     properties_with_financials = []
     for property_obj in all_properties:
-        # Calculate financials using the functions (not model properties)
-        total_income = calculate_property_total_income(property_obj)
-        total_expenses = calculate_property_total_expenses(property_obj)
-        net_income = total_income - total_expenses
-        
-        properties_with_financials.append({
+        prop_data = {
             'property': property_obj,
-            'total_income': total_income,
-            'total_expenses': total_expenses,
-            'net_income': net_income
-        })
+            'total_income': property_obj.calculate_total_income(),
+            'total_expenses': property_obj.calculate_total_expenses(),
+            'net_income': property_obj.calculate_net_income(),
+        }
+        properties_with_financials.append(prop_data)
     
     context = {
         'properties': properties_with_financials
@@ -192,10 +188,10 @@ def property_detail(request, property_id):
     # Get transactions for this property
     transactions = Transaction.objects.filter(property=property_obj).order_by('-date')
     
-    # Calculate financial summary for this property
-    total_income = calculate_property_total_income(property_obj)
-    total_expenses = calculate_property_total_expenses(property_obj)
-    net_income = total_income - total_expenses
+    # Calculate financial summary for this property USING THE MODEL METHODS
+    total_income = property_obj.calculate_total_income()  # Call method on the instance
+    total_expenses = property_obj.calculate_total_expenses()  # Call method on the instance
+    net_income = property_obj.calculate_net_income()  # Call method on the instance
     
     context = {
         'property': property_obj,
@@ -278,15 +274,14 @@ def edit_property(request, property_id):
                 messages.success(request, 'Property updated successfully!')
                 return redirect('property_detail', property_id=property_obj.id)
             else:
-                # Form is not valid, show errors
                 messages.error(request, 'Please correct the errors below.')
     else:
         form = PropertyForm(instance=property_obj)
     
-    # Calculate financial data directly (instead of using model properties)
-    total_income = calculate_property_total_income(property_obj)
-    total_expenses = calculate_property_total_expenses(property_obj)
-    net_income = total_income - total_expenses
+    # Calculate financial data using model methods
+    total_income = property_obj.calculate_total_income()
+    total_expenses = property_obj.calculate_total_expenses()
+    net_income = property_obj.calculate_net_income()
     transaction_count = property_obj.transaction_set.count()
     
     context = {
@@ -441,72 +436,32 @@ def trend_tracking(request):
     
     return render(request, 'tools/trend_tracking.html', context)
 
-
-
-
-
-
-
-
-
-def calculate_property_total_income(property_obj):
-    from django.db import models
+def edit_transaction(request, transaction_id):
+    transaction_obj = get_object_or_404(Transaction, id=transaction_id)
     
-    total_income = 0
+    if request.method == 'POST':
+        if 'delete' in request.POST:
+            # Handle transaction deletion
+            transaction_description = transaction_obj.description or f"{transaction_obj.get_transaction_type_display()} transaction"
+            property_address = transaction_obj.property.address if transaction_obj.property else "No Property"
+            transaction_obj.delete()
+            messages.success(request, f'Transaction "{transaction_description}" for {property_address} has been deleted successfully!')
+            return redirect('transaction_log')
+        else:
+            # Handle transaction update
+            form = TransactionForm(request.POST, instance=transaction_obj)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Transaction updated successfully!')
+                return redirect('transaction_log')
+            else:
+                messages.error(request, 'Please correct the errors below.')
+    else:
+        form = TransactionForm(instance=transaction_obj)
     
-    # Debugging: Print property details
-    print(f"Calculating income for {property_obj.address}")
-    print(f"Monthly Rent: ${property_obj.monthly_rent}")
+    context = {
+        'form': form,
+        'transaction': transaction_obj,
+    }
     
-    # Base rental income
-    if property_obj.property_type in ['rental', 'owned_outright'] and property_obj.monthly_rent > 0:
-        today = date.today()
-        purchase_date = property_obj.purchase_date
-        months_owned = (today.year - purchase_date.year) * 12 + (today.month - purchase_date.month)
-        
-        # Debugging: Print months owned
-        print(f"Months Owned: {months_owned}")
-        
-        if months_owned > 0:
-            total_income += property_obj.monthly_rent * months_owned
-            print(f"Base Rental Income: ${total_income}")
-    
-    # Additional transactions for this property
-    property_income = Transaction.objects.filter(
-        property=property_obj,
-        transaction_type__in=['rental_income', 'additional_income', 'other_income']
-    ).aggregate(models.Sum('amount'))['amount__sum'] or 0
-    
-    # Debugging: Print additional income
-    print(f"Additional Income: ${property_income}")
-    
-    total_income += property_income
-    print(f"Total Income: ${total_income}")
-    
-    return float(total_income)
-
-def calculate_property_total_expenses(property_obj):
-    from django.db import models
-    
-    total_expenses = 0
-    
-    # Debugging: Print property details
-    print(f"Calculating expenses for {property_obj.address}")
-    print(f"Mortgage: ${property_obj.monthly_mortgage}")
-    
-    # Base mortgage expense
-    total_expenses += property_obj.monthly_mortgage
-    
-    # Additional expense transactions for this property
-    property_expenses = Transaction.objects.filter(
-        property=property_obj,
-        transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense']
-    ).aggregate(models.Sum('amount'))['amount__sum'] or 0
-    
-    # Debugging: Print additional expenses
-    print(f"Additional Expenses: ${property_expenses}")
-    
-    total_expenses += property_expenses
-    print(f"Total Expenses: ${total_expenses}")
-    
-    return float(total_expenses)
+    return render(request, 'edit_transaction.html', context)

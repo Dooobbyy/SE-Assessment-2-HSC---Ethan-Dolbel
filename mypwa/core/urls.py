@@ -11,6 +11,7 @@ urlpatterns = [
     path('transactions/add/', views.add_transaction, name='add_transaction'),
     path('transactions/bulk/', views.add_bulk_transaction, name='add_bulk_transaction'),
     path('transactions/log/', views.transaction_log, name='transaction_log'),
+    path('transactions/<int:transaction_id>/edit/', views.edit_transaction, name='edit_transaction'),
     
     # Tools URLs
     path('tools/', views.tools_home, name='tools_home'),

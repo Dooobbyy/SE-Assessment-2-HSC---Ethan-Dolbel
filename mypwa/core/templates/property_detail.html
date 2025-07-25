@@ -63,6 +63,7 @@
                                 <th>Type</th>
                                 <th>Description</th>
                                 <th>Amount</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -73,6 +74,13 @@
                                 <td>{{ transaction.description|default:"-" }}</td>
                                 <td style="color: {% if transaction.transaction_type in 'rental_income,additional_income,other_income' %}var(--color-positive){% else %}var(--color-negative){% endif %}">
                                     {% if transaction.transaction_type in 'maintenance,taxes,insurance,other_expense' %}-{% endif %}${{ transaction.amount }}
+                                </td>
+                                <td>
+                                    <a href="{% url 'edit_transaction' transaction.id %}" 
+                                    style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;" 
+                                    title="Edit Transaction">
+                                        ✏️
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}
