@@ -7,6 +7,8 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 import calendar
 from django.db import transaction
+from django.contrib.auth.decorators import login_required
+from django.views.generic import TemplateView
 
 
 
@@ -20,9 +22,26 @@ TRANSACTION_TYPE_CHOICES = [
     ('other_expense', 'Other Expense'),
 ]
 
+@login_required
+def custom_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('index')  # Redirect to home page after login
+        else:
+            # Return an 'invalid login' error message
+            return render(request, 'registration/login.html', {
+                'error': 'Invalid username or password'
+            })
+    else:
+        return render(request, 'registration/login.html')
 
-
+@login_required
 def home(request):
+    print(f"User is authenticated: {request.user.is_authenticated}")  # Debug statement
     # Generate last 12 months (including current month)
     today = date.today()
     months = []
@@ -46,14 +65,13 @@ def home(request):
         year = month_info['year']
         month = month_info['month']
         month_labels.append(f"{month_info['month_name']} {year}")
-        
-        # Calculate total income for this month
-        income = calculate_monthly_income(year, month)
+
+        # Correct way to call the functions:
+        income = calculate_monthly_income(year, month)  # Pass only year and month
         income_data.append(float(income))
-        
-        # Calculate total expenses for this month  
-        expenses = calculate_monthly_expenses(year, month)
-        expense_data.append(float(expenses))  # Ensure expenses are positive
+
+        expenses = calculate_monthly_expenses(year, month) # Pass only year and month
+        expense_data.append(float(expenses))
     
     # Calculate summary metrics
     total_income = sum(property_obj.calculate_total_income() for property_obj in Property.objects.all())
@@ -71,6 +89,7 @@ def home(request):
     
     return render(request, 'home.html', context)
 
+@login_required
 def properties(request):
     # Get all properties
     all_properties = Property.objects.all().order_by('-purchase_date')
@@ -92,6 +111,7 @@ def properties(request):
     
     return render(request, 'properties.html', context)
 
+@login_required
 def add_property(request):
     if request.method == 'POST':
         form = PropertyForm(request.POST)
@@ -159,6 +179,7 @@ def calculate_monthly_expenses(year, month):
     total_expenses += float(month_expenses)
     return total_expenses
 
+@login_required
 def add_transaction(request):
     if request.method == 'POST':
         form = TransactionForm(request.POST)
@@ -175,6 +196,7 @@ def add_transaction(request):
     
     return render(request, 'add_transaction.html', {'form': form})
 
+@login_required
 def add_bulk_transaction(request):
     if request.method == 'POST':
         form = BulkTransactionForm(request.POST)
@@ -210,6 +232,7 @@ def add_bulk_transaction(request):
         'properties': properties_for_template
     })
 
+@login_required
 def property_detail(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
     
@@ -231,6 +254,7 @@ def property_detail(request, property_id):
     
     return render(request, 'property_detail.html', context)
 
+@login_required
 def transaction_log(request):
     # Get all transactions, ordered by date (newest first)
     transactions = Transaction.objects.select_related('property').order_by('-date', '-created_at')
@@ -284,6 +308,7 @@ def transaction_log(request):
     
     return render(request, 'transaction_log.html', context)
 
+@login_required
 def edit_property(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
     
@@ -337,6 +362,7 @@ def calculate_predicted_value(self, years_ahead=5, annual_growth_rate=0.03):
     predicted_value = float(self.purchase_price) * ((1 + annual_growth_rate) ** total_years)
     return round(predicted_value, 2)
 
+@login_required
 def tools_home(request):
     """Main tools page"""
     properties = Property.objects.all()
@@ -345,6 +371,7 @@ def tools_home(request):
     }
     return render(request, 'tools/tools_home.html', context)
 
+@login_required
 def property_value_calculator(request):
     """Property value prediction calculator"""
     if request.method == 'POST':
@@ -386,6 +413,7 @@ def property_value_calculator(request):
     
     return render(request, 'tools/value_calculator.html', context)
 
+@login_required
 def add_scenario(request):
     if request.method == 'POST':
         form = ScenarioForm(request.POST)
@@ -398,10 +426,12 @@ def add_scenario(request):
     
     return render(request, 'tools/add_scenario.html', {'form': form})
 
+@login_required
 def scenario_list(request):
     scenarios = Scenario.objects.all().order_by('-created_at')
     return render(request, 'tools/scenario_list.html', {'scenarios': scenarios})
 
+@login_required
 def delete_scenario(request, scenario_id):
     scenario = get_object_or_404(Scenario, id=scenario_id)
     if request.method == 'POST':
@@ -411,6 +441,7 @@ def delete_scenario(request, scenario_id):
         return redirect('scenario_list')
     return render(request, 'tools/delete_scenario.html', {'scenario': scenario})
 
+@login_required
 def scenario_comparison(request):
     if request.method == 'POST':
         form = ScenarioComparisonForm(request.POST)
@@ -449,6 +480,7 @@ def scenario_comparison(request):
     
     return render(request, 'tools/scenario_comparison.html', context)
 
+@login_required
 def trend_tracking(request):
     """Trend tracking and comparison tool"""
     properties = Property.objects.filter(purchase_price__isnull=False).exclude(purchase_price=0)
@@ -492,6 +524,7 @@ def trend_tracking(request):
     
     return render(request, 'tools/trend_tracking.html', context)
 
+@login_required
 def edit_transaction(request, transaction_id):
     transaction_obj = get_object_or_404(Transaction, id=transaction_id)
     

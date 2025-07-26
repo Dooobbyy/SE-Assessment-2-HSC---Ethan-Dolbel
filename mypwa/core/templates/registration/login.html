@@ -1,0 +1,62 @@
+<!-- templates/registration/login.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Login - Estate Finance Tracker{% endblock %}</title>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Viewport for PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Load CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+</head>
+<!-- Added 'login-page' class to body -->
+<body class="login-page">
+{% block content %}
+<div class="login-page-wrapper">
+        <div class="card login-card">
+            <h2>Login</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.username.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.password.label_tag }}
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                        <ul class="errorlist">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn-accent">Login</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+</body>
+</html>

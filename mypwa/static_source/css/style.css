@@ -680,3 +680,84 @@ h1 {
   opacity: 0;
   pointer-events: none;
 }
+
+/* === Login Page Styles === */
+.login-page {
+    background-color: var(--color-bg-main);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-page .login-page-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-page .login-card {
+    width: 100%;
+    max-width: 400px;
+    margin: 20px;
+    background-color: var(--color-card-bg);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.login-page .login-card h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: var(--color-card-text);
+    font-size: 2em;
+}
+
+.login-page .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.login-page .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--color-card-text);
+    font-weight: 500;
+}
+
+.login-page .form-group input {
+    width: 100%;
+    padding: 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--color-gold);
+    border-radius: 4px;
+    color: var(--color-white);
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.login-page .form-group input:focus {
+    outline: none;
+    border-color: var(--color-gold);
+    box-shadow: 0 0 0 2px rgba(254, 197, 58, 0.3);
+}
+
+.login-page .btn-accent {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+    margin-top: 10px;
+}
+
+.login-page .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    color: var(--color-negative);
+    font-size: 0.9em;
+    text-align: left;
+}
