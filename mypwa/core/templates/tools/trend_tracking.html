@@ -1,3 +1,4 @@
+<!-- templates/tools/trend_tracking.html -->
 {% extends 'base.html' %}
 
 {% block title %}Trend Tracking - Real Estate Finance Tracker{% endblock %}
@@ -7,21 +8,22 @@
     <div class="properties-page">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Portfolio Trend Tracking</h1>
-            <a href="{% url 'tools_home' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
+            <!-- Use Metallic Button (Red) -->
+            <a href="{% url 'tools_home' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
         </div>
-        
+
         {% if properties %}
         <div class="stats-grid">
             <div class="card">
                 <h4>Total Investment</h4>
                 <h2>${{ total_investment|floatformat:2 }}</h2>
             </div>
-            
+
             <div class="card">
                 <h4>Current Portfolio Value</h4>
                 <h2 style="color: var(--color-gold);">${{ total_current_value|floatformat:2 }}</h2>
             </div>
-            
+
             <div class="card">
                 <h4>Overall ROI</h4>
                 <h2 style="color: {% if portfolio_roi >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
@@ -29,8 +31,8 @@
                 </h2>
             </div>
         </div>
-        
-        <div class="card">
+
+        <div id="trend-tracking-performance" class="card">
             <h3>Property Performance</h3>
             <div style="overflow-x: auto;">
                 <table class="property-table">
@@ -49,8 +51,8 @@
                             <td>{{ data.property.address }}</td>
                             <td>${{ data.property.purchase_price|floatformat:2 }}</td>
                             <td>${{ data.current_value|floatformat:2 }}</td>
-                            <td style="color: {% if data.current_value > data.property.purchase_price %}var(--color-positive){% else %}var(--color-negative){% endif %};">
-                                ${{ data.current_value|add:-data.property.purchase_price|floatformat:2 }}
+                            <td style="color: {% if data.value_change >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
+                                ${{ data.value_change|floatformat:2 }}
                             </td>
                             <td style="color: {% if data.roi >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
                                 {{ data.roi|floatformat:2 }}%
@@ -65,9 +67,25 @@
         <div class="card" style="text-align: center; padding: 40px;">
             <h3>No Properties with Purchase Prices</h3>
             <p>To track trends, you need to add properties with purchase prices.</p>
-            <a href="{% url 'add_property' %}" class="btn-accent" style="margin-top: 20px;">Add Property with Purchase Price</a>
+            <!-- Use Metallic Button -->
+            <a href="{% url 'add_property' %}" class="btn-metallic btn-accent-metallic" style="margin-top: 20px;">Add Property with Purchase Price</a>
         </div>
         {% endif %}
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const statsGrid = document.querySelector('.stats-grid');
+        const cards = statsGrid.querySelectorAll('.card');
+
+        let totalWidth = 0;
+        cards.forEach(card => {
+            totalWidth += card.offsetWidth;
+        });
+
+        const incomeExpenseCard = document.getElementById('income-expense-card');
+        incomeExpenseCard.style.width = `${totalWidth}px`;
+    });
+</script>
 {% endblock %}

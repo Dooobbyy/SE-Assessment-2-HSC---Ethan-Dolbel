@@ -1,0 +1,99 @@
+<!-- templates/tools/scenario_comparison.html -->
+{% extends 'base.html' %}
+
+{% block title %}Scenario Comparison - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="properties-page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Scenario Comparison</h1>
+            <!-- Use Metallic Button (Red) -->
+            <a href="{% url 'scenario_list' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Scenarios</a>
+        </div>
+        
+        <div class="card">
+            <h3>Select Property and Scenarios</h3>
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.property.id_for_label }}">Select Property:</label>
+                    {{ form.property }}
+                    {% if form.property.errors %}
+                        <div class="form-error" style="color: var(--color-negative);">{{ form.property.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.years_ahead.id_for_label }}">Years to Project:</label>
+                    {{ form.years_ahead }}
+                    {% if form.years_ahead.errors %}
+                        <div class="form-error" style="color: var(--color-negative);">{{ form.years_ahead.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label>{{ form.scenarios.label }}:</label>
+                    <div class="property-checkbox-list">
+                        <ul class="checkbox-list">
+                            {% for scenario in form.scenarios.field.queryset %}
+                            <li class="checkbox-item">
+                                <span>{{ scenario.name }} ({{ scenario.growth_rate }}%) - {{ scenario.description|default:"No description" }}</span>
+                                <input type="checkbox" name="scenarios" value="{{ scenario.id }}" id="scenario_{{ scenario.id }}" 
+                                       {% if scenario in form.scenarios.value %}checked{% endif %}>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% if form.scenarios.errors %}
+                        <div class="form-error" style="color: var(--color-negative);">{{ form.scenarios.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                    <!-- Use Metallic Button -->
+                    <button type="submit" class="btn-metallic btn-accent-metallic">Compare Scenarios</button>
+                    <!-- Use Metallic Button (Red) -->
+                    <a href="{% url 'scenario_list' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
+                </div>
+            </form>
+        </div>
+        
+        {% if show_results %}
+        <div class="card">
+            <h3>Scenario Comparison Results</h3>
+            <p><strong>Property:</strong> {{ property.address }}</p>
+            <p><strong>Years Projected:</strong> {{ years_ahead }}</p>
+            
+            <div style="overflow-x: auto;">
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Growth Rate</th>
+                            <th>Current Value</th>
+                            <th>Future Value</th>
+                            <th>ROI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>{{ result.scenario.name }}</td>
+                            <td>{{ result.scenario.growth_rate }}%</td>
+                            <td>${{ result.current_value|floatformat:2 }}</td>
+                            <td style="color: var(--color-gold);">${{ result.future_value|floatformat:2 }}</td>
+                            <td style="color: {% if result.roi >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
+                                {{ result.roi|floatformat:2 }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -17,6 +17,23 @@
   --color-gold-dark: #F8C471; /* Slightly darker gold */
   --color-positive-dark: #00B359; /* Slightly darker positive */
   --color-alert-dark: #F6A700; /* Slightly darker alert */
+
+/* === Metallic Versions for Text (Brighter) === */
+  --color-gold-metallic-text: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, #FEC53A 30%, #F8C471 70%, rgba(0, 0, 0, 0.4) 100%);
+  --color-positive-metallic-text: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, #00C896 30%, #00B359 70%, rgba(0, 0, 0, 0.4) 100%);
+  --color-negative-metallic-text: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, #D35B5B 30%, #B04545 70%, rgba(0, 0, 0, 0.4) 100%);
+  --color-alert-metallic-text: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, #F6A700 30%, #F6A700 70%, rgba(0, 0, 0, 0.4) 100%);
+  --color-card-text-metallic-text: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, #F8F2DC 30%, #E0D8C0 70%, rgba(0, 0, 0, 0.3) 100%);
+  --color-muted-metallic-text: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6) 0%, #B4B4C4 30%, #888899 70%, rgba(0, 0, 0, 0.3) 100%);
+  --color-white-metallic-text: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9) 0%, #FFFFFF 30%, #DDDDDD 70%, rgba(0, 0, 0, 0.3) 100%);
+
+  /* === Metallic Versions for Buttons (Darker/Subdued) === */
+  --color-gold-metallic-btn: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, #FEC53A 30%, #E0A850 60%, #00000080 100%);
+  --color-positive-metallic-btn: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, #00C896 30%, #00994d 60%, #00000080 100%);
+  --color-negative-metallic-btn: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, #D35B5B 30%, #993d3d 60%, #00000080 100%);
+  --color-alert-metallic-btn: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, #F6A700 30%, #CC8400 60%, #00000080 100%);
+  --color-card-bg-metallic-btn: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, #303040 30%, #1a1a25 60%, #00000080 100%);
+  --color-sidebar-metallic-btn: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, #2B2B38 30%, #15151c 60%, #000000cc 100%);
 }
 
 /* === Reset & Base Styles === */
@@ -76,102 +93,6 @@ body {
   color: var(--color-white);
 }
 
-
-/* === Sidebar === */
-.sidebar {
-    position: fixed; /* Keep the sidebar fixed */
-    top: 0;
-    left: 0;
-    width: 250px;
-    background-color: var(--color-sidebar);
-    padding: 20px;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-    height: 100vh; /* Full viewport height */
-    overflow-y: auto; /* Allow scrolling if content exceeds height */
-}
-
-.sidebar {
-  width: 250px;
-  background-color: var(--color-sidebar);
-  padding: 20px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-}
-
-.sidebar h2 {
-  font-size: 1.4em;
-  margin-bottom: 20px;
-  color: var(--color-gold);
-}
-
-.nav li {
-  margin: 10px 0;
-}
-
-.nav a {
-  color: var(--color-white);
-  font-weight: 500;
-  display: block;
-  padding: 10px;
-  border-radius: 6px;
-  transition: background 0.3s ease;
-}
-
-.nav a:hover {
-  background-color: var(--color-gold);
-  color: #000;
-}
-
-.nav .inactive a {
-  color: var(--color-muted);
-}
-
-/* === Main Content === */
-.main-content {
-    flex: 1;
-    padding: 20px;
-    background-color: var(--color-bg-main);
-    margin-left: 250px; /* Match the sidebar width */
-    max-width: 1200px; /* Optional: Limit the width for better responsiveness */
-    margin: 0 auto; /* Center the main content */
-}
-
-/* === Cards === */
-
-.card {
-  background-color: var(--color-card-bg);
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  color: var(--color-card-text);
-  margin-bottom: 20px;
-}
-
-.card h3 {
-  margin-top: 0;
-  color: var(--color-card-text);
-  font-size: 1em;
-  margin-bottom: 10px;
-}
-
-.card h2 {
-  margin-top: 0;
-  color: var(--color-card-text);
-  font-size: 3em;
-  margin-bottom: 0px;
-}
-
-.card p {
-  font-size: 1.5em;
-  color: var(--color-gold);
-}
-
-/* Stats Grid - 3 Columns, Auto Rows */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 equal-width columns */
-  gap: 20px; /* Spacing between cards */
-  margin-bottom: 30px; /* Space below the grid */
-}
 
 /* Charts Section */
 .charts-section {
@@ -234,35 +155,6 @@ body {
   margin: 20px 0;
 }
 
-/* === Monthly Summary Card === */
-.monthly-summary form {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-#month-select {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: none;
-  background-color: var(--color-sidebar);
-  color: var(--color-white);
-}
-
-#summary-values li {
-  margin-bottom: 5px;
-}
-
-/* === Yearly Summary Card === */
-.yearly-summary ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-.yearly-summary li {
-  margin-bottom: 8px;
-}
 
 /* Properties Page Styles */
 .properties-page {
@@ -387,58 +279,404 @@ body {
     margin-top: 10px; /* Adjust this value to move the button down */
 }
 
-/* === Button Styles === */
-.btn-accent,
-.btn-positive,
-.btn-alert {
-    display: inline-block;
-    padding: 10px 20px;
-    font-size: 1em;
-    text-align: center;
-    text-decoration: none;
+
+
+/* CHECKBOXES */
+.property-checkbox-list {
+    border: 1px solid var(--color-gold); /* Match the 1px border of other inputs */
     border-radius: 6px;
-    transition: all 0.1s ease;
-    margin-left: 10px; /* Spacing between buttons */
-    font-weight: bold; /* Bold the button text */
-    border: none; /* Remove border for cleaner look */
-    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); /* Drop shadow for 3D effect */
-    position: relative; /* For positioning adjustments */
+    padding: 10px;
+    background-color: var(--color-card-bg);
 }
 
-.btn-accent {
-    background-color: var(--color-gold);
-    color: #000; /* Default text color (black) */
+.checkbox-list {
+    list-style-type: none; /* Remove bullet points */
+    padding-left: 0; /* Remove default padding */
 }
 
-.btn-positive {
-    background-color: var(--color-positive);
-    color: #000; /* Default text color (black) */
-}
-
-.btn-alert {
-    background-color: var(--color-alert);
-    color: #000; /* Default text color (black) */
-}
-
-.button-group {
+.checkbox-item {
     display: flex;
-    gap: 10px; /* Spacing between buttons */
+    justify-content: space-between; /* Aligns items to left and right */
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
 }
 
-/* Hover effects - text turns white and pressed-in effect */
-.btn-accent:hover,
-.btn-positive:hover,
-.btn-alert:hover {
-    color: white; /* Text turns white on hover */
-    transform: translateY(2px); /* Move down slightly */
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2); /* Reduce shadow for pressed effect */
+.checkbox-item span {
+    font-size: 1em;
+    color: var(--color-card-text);
 }
 
-/* Active/pressed state */
-.btn-accent:active,
-.btn-positive:active,
-.btn-alert:active {
-    color: white; /* Keep text white when actively pressed */
-    transform: translateY(4px); /* Move down more when actively pressed */
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0.2); /* Remove shadow when pressed */
+.checkbox-item input[type="checkbox"] {
+    accent-color: var(--color-gold);
+    width: 18px;
+    height: 18px;
+}
+
+/* SCENARIO FORMATTING */
+
+.form-container {
+    background-color: var(--color-card-bg);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%; /* Ensure full width */
+    max-width: 800px; /* Optional: Limit width for larger screens */
+}
+
+h1 {
+    font-size: 2em;
+    color: var(--color-card-text);
+    margin: 0;
+}
+
+.btn-negative {
+    background-color: var(--color-negative);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    border-radius: 6px;
+}
+
+
+/* Specific Card: Stats Grid (Top Summary Cards) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Distribute equal width among 3 cards */
+    gap: 20px; /* Spacing between cards */
+    width: 100%; /* Ensure it uses available space */
+    margin-bottom: 40px; /* Add vertical spacing after the grid */
+}
+
+/* Adjust max-width for top summary cards if needed */
+.stats-grid .card {
+    /* These cards have a potential max-width limit */
+    max-width: 300px; /* Optional: Limit width for larger screens */
+    margin-bottom: 0; /* Override default margin from general .card */
+}
+
+/* Specific Card: Monthly Income vs. Expenses Chart */
+#income-expense-card {
+    /* Inherits general .card styles */
+    margin: 0 auto; /* Centers the card horizontally */
+    max-width: none; /* Allow full width within .main-content constraints */
+    margin-bottom: 0; /* Override default margin from general .card */
+}
+
+/* Ensure the chart canvas behaves */
+#incomeExpenseLineChart {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 400px;
+}
+
+/* === Metallic Button Styles === */
+.btn-metallic {
+  position: relative;
+  display: inline-block;
+  /* Original Button Size */
+  padding: 10px 20px; /* Smaller padding */
+  font-size: 16px;    /* Standard font size */
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none; /* For links styled as buttons */
+  border-radius: 5px;
+  border: none; /* Remove default border */
+  cursor: pointer;
+
+  /* Text Color */
+  color: black; /* Default text color is black */
+
+  /* Layout & Transition */
+  transition: all 0.3s ease; /* Smooth transition for color, transform, shadow */
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); /* Base drop shadow for 3D effect */
+  overflow: hidden; /* Contain the pseudo-element highlight */
+
+  /* Ensure it behaves like a button */
+  background-color: transparent; /* Background will be set by specific variants */
+  background-image: var(--button-metallic-bg); /* Use the specific gradient */
+  background-size: cover; /* Ensure the gradient covers the button */
+}
+
+/* Linear Gradient Effect (Pseudo-element) */
+.btn-metallic::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  /* Subtle square highlight */
+  background: linear-gradient(
+    135deg, /* Diagonal angle */
+    rgba(255, 255, 255, 0.2) 0%,  /* Less bright white */
+    transparent 50%               /* Fade to transparent */
+  );
+  opacity: 0; /* Initially hidden */
+  transition: opacity 0.3s ease; /* Smooth fade in/out */
+  pointer-events: none; /* Doesn't interfere with clicks */
+  transform: rotate(0deg); /* No initial rotation for a straight highlight */
+  /* Adjust size/position if needed for different button sizes */
+}
+
+/* Hover State */
+.btn-metallic:hover {
+  color: white; /* Text turns white on hover */
+  transform: translateY(2px); /* Move down slightly on hover */
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2); /* Reduce shadow on hover for pressed effect */
+}
+
+/* Hover Highlight Effect */
+.btn-metallic:hover::before {
+  opacity: 1; /* Show the square highlight on hover */
+}
+
+/* Active/Pressed State */
+.btn-metallic:active {
+  color: white; /* Keep text white when actively pressed */
+  transform: translateY(4px); /* Move down more when actively pressed */
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.2); /* Remove shadow when pressed */
+}
+
+/* Specific Button Variants - Assign the correct darker metallic gradient */
+.btn-accent-metallic {
+  --button-metallic-bg: linear-gradient(to bottom right, var(--color-gold), var(--color-gold-dark));
+}
+.btn-positive-metallic {
+  --button-metallic-bg: linear-gradient(to bottom right, var(--color-positive), var(--color-positive-dark));
+}
+.btn-alert-metallic {
+  --button-metallic-bg: linear-gradient(to bottom right, var(--color-alert), var(--color-alert-dark));
+}
+.btn-secondary-metallic {
+  --button-metallic-bg: linear-gradient(to bottom right, var(--color-card-bg), var(--color-card-bg-dark));
+  /* Secondary buttons might need different default text color */
+  color: var(--color-card-text); /* Use card text color by default */
+}
+/* Ensure secondary button text also turns white on hover/active if it started with card-text color */
+.btn-secondary-metallic:hover,
+.btn-secondary-metallic:active {
+  color: white;
+}
+
+.btn-negative-metallic {
+  --button-metallic-bg: linear-gradient(to bottom right, var(--color-negative), #b04545); /* Use red colors */
+  color: var(--color-white); /* Red buttons should probably have white text by default */
+  color: black; /* Default text color is black */
+}
+
+/* Ensure red button text stays white on hover/active */
+.btn-negative-metallic:hover,
+.btn-negative-metallic:active {
+  color: white; /* Explicitly keep text white */
+}
+/* === Sidebar === */
+.sidebar {
+    position: fixed; /* Keep the sidebar fixed */
+    top: 0;
+    left: 0;
+    width: 250px;
+    background-color: var(--color-sidebar);
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    height: 100vh; /* Full viewport height */
+    overflow-y: auto; /* Allow scrolling if content exceeds height */
+}
+
+.sidebar h2 {
+  font-size: 1.4em;
+  margin-bottom: 20px;
+  color: var(--color-gold);
+}
+
+.nav li {
+  margin: 10px 0;
+}
+
+/* Sidebar Navigation Links - Simple Hover Effect */
+.nav a {
+  color: var(--color-white); /* Initial text color */
+  font-weight: 500;
+  display: flex; /* Use flex to align icon and text */
+  align-items: center; /* Align items vertically */
+  gap: 10px; /* Space between icon and text */
+  padding: 10px;
+  border-radius: 6px;
+  transition: all 0.3s ease; /* Smooth transition for hover effects */
+
+  /* --- No initial border/outline --- */
+  border: none; /* Ensure no border */
+  outline: none; /* Ensure no outline */
+  background-color: transparent; /* No initial background */
+  box-shadow: none; /* Ensure no initial shadow */
+}
+
+/* Hover State - Change background and text color */
+.nav a:hover {
+  background-color: var(--color-gold); /* Change background on hover */
+  color: #000; /* Change text color on hover */
+  /* You can add other effects here like transform: translateX(5px); if desired */
+}
+
+/* Optional: Style for inactive links if needed */
+.nav .inactive a {
+  color: var(--color-muted);
+  /* Inactive links can have a different hover style if desired */
+  /* .nav .inactive a:hover { background-color: var(--color-muted); color: #000; } */
+}
+
+/* Generic Card Styling (Ensure it can grow) */
+.card {
+    background-color: var(--color-card-bg);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: var(--color-card-text);
+    width: 100%; /* Take full width of parent */
+    max-width: none; /* Allow it to expand fully within constraints */
+    margin-bottom: 40px; /* Add consistent vertical spacing between cards */
+    min-width: 0; /* Critical for flexbox children to allow shrinking */
+    box-sizing: border-box; /* Include padding/border in width calculation */
+}
+
+
+/* === Main Content Layout (Ensure it provides space) === */
+/* This section was in your file twice, I'm updating the final definition */
+.main-content {
+    flex: 1; /* Takes remaining space next to the fixed sidebar */
+    padding: 20px; /* Keep the padding */
+    background-color: var(--color-bg-main);
+    margin-left: 250px; /* Match the sidebar width */
+    /* --- Key Changes for Flexibility --- */
+    max-width: none; /* Remove fixed max-width to allow full expansion */
+    width: calc(100% - 250px - 40px); /* Account for sidebar and padding */
+    margin: 0 auto; /* Keep centered if needed */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box; /* Include padding in width calculation */
+    /* --- End Key Changes --- */
+}
+
+/* Generic Table Container (Make it flexible) */
+.table-container {
+    width: 100%; /* Take full width of the card */
+    overflow-x: hidden; /* Crucial: Prevent horizontal scroll on container */
+    box-sizing: border-box; /* Include padding/border in width */
+    /* Remove max-width: 100% if it conflicts, rely on parent card */
+}
+
+/* Generic Table Styling (Make columns flexible) */
+.property-table {
+    width: 100%; /* Ensure the table takes full width of its container */
+    border-collapse: collapse;
+    color: var(--color-card-text);
+    font-size: 0.9em; /* Optional: Reduce font size for better fit */
+    table-layout: auto; /* Let browser calculate column widths (default) */
+    box-sizing: border-box; /* Include padding/border in width */
+}
+
+.property-table th,
+.property-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    /* --- Key Changes for Flexibility --- */
+    white-space: normal; /* Allow text wrapping - CRITICAL */
+    word-wrap: break-word; /* Break long words if necessary */
+    overflow-wrap: break-word; /* Modern alias for word-wrap */
+    /* Remove fixed min-width/max-width to allow natural sizing */
+    width: auto; /* Let content and table-layout determine width */
+    box-sizing: border-box; /* Include padding in width */
+    /* --- End Key Changes --- */
+}
+
+.property-table th {
+    background-color: #2B2B38; /* Or var(--color-card-bg-secondary) if defined */
+    /* Ensure header text also wraps if needed */
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Optional: If you *really* need some control over column proportions without fixed sizes,
+   you can use percentage widths sparingly, but let the browser handle the rest.
+   Example for Date column (adjust percentages as needed):
+.property-table td:nth-child(1),
+.property-table th:nth-child(1) {
+    width: 12%; 
+}
+*/
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .property-table {
+        font-size: 0.8em; /* Smaller font size for mobile */
+    }
+    /* On smaller screens, ensure wrapping is even more aggressive */
+    .property-table th,
+    .property-table td {
+        padding: 8px; /* Reduce padding on small screens */
+    }
+    /* Consider stacking filters vertically on small screens */
+    .card > form[style*="flex-wrap: wrap;"] { /* Target filter form */
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .form-group[style*="min-width: 200px;"] { /* Target filter inputs */
+         min-width: auto !important; /* Override inline style */
+         width: 100%;
+    }
+    .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Distribute equal width among 3 cards */
+    gap: 20px; /* Spacing between cards */
+    margin-bottom: 20px;
+    }
+}
+
+/* === Content Container === */
+.content-container {
+    max-width: 1200px; /* Limit the width of the content area */
+    margin: 0 auto; /* Center the content horizontally */
+    padding: 0 20px; /* Add padding on the left and right for smaller screens */
+    width: 100%; /* Ensure it takes full width up to max-width */
+}
+
+#trend-tracking-performance {
+    background-color: var(--color-card-bg);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin: 0 auto; /* Centers the card horizontally */
+    max-width: none; /* Remove any max-width constraints */
+}
+
+/* === Notification Bar Styles === */
+.notification-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px 20px;
+  background-color: var(--color-positive);
+  color: white;
+  font-weight: bold;
+  z-index: 1000; /* Ensure it appears above other elements */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  opacity: 1; /* Start fully visible */
+}
+
+.notification-bar p {
+  margin: 0;
+}
+
+/* Animation for fading out the notification */
+.notification-bar.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }

@@ -8,7 +8,8 @@
     <div class="form-container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Edit Property</h1>
-            <a href="{% url 'properties' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Properties</a>
+            <!-- Use Metallic Button (Red) -->
+            <a href="{% url 'properties' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Properties</a>
         </div>
         
        <form method="post" class="card">
@@ -73,23 +74,26 @@
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
-                <button type="submit" class="btn-accent">Update Property</button>
-                <button type="button" class="btn-alert" onclick="confirmDelete()">Delete Property</button>
-                <a href="{% url 'properties' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
+                <!-- Use Metallic Button -->
+                <button type="submit" class="btn-metallic btn-accent-metallic">Update Property</button>
+                <!-- Use Metallic Button -->
+                <button type="button" class="btn-metallic btn-alert-metallic" onclick="confirmDelete()">Delete Property</button>
+                <!-- Use Metallic Button (Red) -->
+                <a href="{% url 'properties' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
             </div>
         </form>
         
         <!-- Property Summary Card -->
         <div class="card" style="margin-top: 20px;">
             <h3>Property Summary</h3>
-            <p><strong>Current Total Income:</strong> <span style="color: var(--color-positive);">${{ property.total_income|floatformat:2 }}</span></p>
-            <p><strong>Current Total Expenses:</strong> <span style="color: var(--color-negative);">${{ property.total_expenses|floatformat:2 }}</span></p>
+            <p><strong>Current Total Income:</strong> <span style="color: var(--color-positive);">${{ total_income|floatformat:2 }}</span></p>
+            <p><strong>Current Total Expenses:</strong> <span style="color: var(--color-negative);">${{ total_expenses|floatformat:2 }}</span></p>
             <p><strong>Current Net Income:</strong> 
-                <span style="color: {% if property.net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
-                    ${{ property.net_income|floatformat:2 }}
+                <span style="color: {% if net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                    ${{ net_income|floatformat:2 }}
                 </span>
             </p>
-            <p><strong>Associated Transactions:</strong> {{ property.transaction_set.count }}</p>
+            <p><strong>Associated Transactions:</strong> {{ transaction_count }}</p>
         </div>
     </div>
 </div>
@@ -102,7 +106,7 @@
         <p>This action will permanently delete:</p>
         <ul>
             <li>The property record</li>
-            <li>All associated transactions ({{ property.transaction_set.count }} transactions)</li>
+            <li>All associated transactions ({{ transaction_count }} transactions)</li>
             <li>All financial history for this property</li>
         </ul>
         <p><strong>This cannot be undone!</strong></p>
@@ -110,8 +114,10 @@
         <form method="post" style="display: flex; gap: 10px; margin-top: 20px;">
             {% csrf_token %}
             <input type="hidden" name="delete" value="true">
-            <button type="submit" class="btn-negative" style="background-color: var(--color-negative);">Yes, Delete Property</button>
-            <button type="button" class="btn-accent" onclick="closeModal()">Cancel</button>
+            <!-- Use Metallic Button (Red) -->
+            <button type="submit" class="btn-metallic btn-negative-metallic" style="background-color: var(--color-negative);">Yes, Delete Property</button>
+            <!-- Use Metallic Button -->
+            <button type="button" class="btn-metallic btn-accent-metallic" onclick="closeModal()">Cancel</button>
         </form>
     </div>
 </div>

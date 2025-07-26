@@ -6,65 +6,53 @@
     <title>{% block title %}Real Estate Finance Tracker{% endblock %}</title>
 
     <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js "></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Viewport for PWA -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Manifest for PWA -->
-    <link rel="manifest" href="{% static 'manifest.json' %}">
-    <link rel="icon" type="image/png" href="{% static 'icon.png' %}">
-
     <!-- Load CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-    <!-- Icons -->
-    <img src="{% static 'images/003-home.png' %}" alt="Home icon">
 </head>
 <body>
-  </div>
-
   <!-- Sidebar -->
   <div class="sidebar">
       <h2>Real Estate Tracker</h2>
       <ul class="nav">
-          <li><a href="{% url 'index' %}"><img src="{% static 'images/003-home.png' %}" alt="Home icon" width=20 height=20> Dashboard</a></li>
-          <li><a href="{% url 'properties' %}"><img src="{% static 'images/009-house-with-money-symbol.png' %}" alt="Properties icon" width=20 height=20>Properties</a></li>
-          <li><a href="{% url 'index' %}"><img src="{% static 'images/007-money.png' %}" alt="Income and Expenses icon" width=20 height=20>Income & Expenses</a></li>
-          <li><a href="{% url 'index' %}"><img src="{% static 'images/004-sheet.png' %}" alt="Reports icon" width=20 height=20>Reports</a></li>
-          <li><a href="{% url 'tools_home' %}"><img src="{% static 'images/008-wrench-simple.png' %}" alt="Tools icon" width=20 height=20>Tools</a></li>
-          <li><a href="{% url 'index' %}"><img src="{% static 'images/005-setting.png' %}" alt="Settings icon" width=20 height=20>Settings</a></li>
-          <li><a href="{% url 'index' %}"><img src="{% static 'images/001-user.png' %}" alt="Logout icon" width=20 height=20>Logout</a></li>
+          <!-- Removed btn-metallic classes, keeping it simple -->
+          <li><a href="{% url 'index' %}"><img src="{% static 'images/003-home.png' %}" alt="Home icon" width="20" height="20"> Dashboard</a></li>
+          <li><a href="{% url 'properties' %}"><img src="{% static 'images/009-house-with-money-symbol.png' %}" alt="Properties icon" width="20" height="20"> Properties</a></li>
+          <li><a href="{% url 'index' %}"><img src="{% static 'images/007-money.png' %}" alt="Income and Expenses icon" width="20" height="20"> Income & Expenses</a></li>
+          <li><a href="{% url 'index' %}"><img src="{% static 'images/004-sheet.png' %}" alt="Reports icon" width="20" height="20"> Reports</a></li>
+          <li><a href="{% url 'tools_home' %}"><img src="{% static 'images/008-wrench-simple.png' %}" alt="Tools icon" width="20" height="20"> Tools</a></li>
+          <li><a href="{% url 'index' %}"><img src="{% static 'images/005-setting.png' %}" alt="Settings icon" width="20" height="20"> Settings</a></li>
+          <li><a href="{% url 'index' %}"><img src="{% static 'images/001-user.png' %}" alt="Logout icon" width="20" height="20"> Logout</a></li>
       </ul>
   </div>
 
   <!-- Main Content -->
   <div class="main-content">
-    {% if messages %}
-        <div style="padding: 10px; margin: 10px 0; border-radius: 4px;">
-            {% for message in messages %}
-                <div class="alert" style="background-color: {% if message.tags == 'success' %}var(--color-positive){% elif message.tags == 'error' %}var(--color-negative){% else %}var(--color-alert){% endif %}; color: white; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+    
+    <!-- Content Container for consistent margins -->
+    <div class="content-container">
       {% block content %}
       {% endblock %}
+    </div>
   </div>
   
   <!-- Footer for Credits -->
   <footer class="credits">
       <div>
           Icons made by 
-          <a href="https://www.freepik.com"  title="Freepik">Freepik</a>,
-          <a href="https://www.flaticon.com/authors/hilmy-abiyyu-a"  title="Hilmy Abiyyu A.">Hilmy Abiyyu A.</a>,
-          <a href="https://www.flaticon.com/authors/torticon"  title="Torticon">Torticon</a>,
-          <a href="https://www.flaticon.com/authors/laura-reen"  title="Laura Reen">Laura Reen</a>,
-          <a href="https://www.flaticon.com/authors/dokodemo"  title="dokodemo">dokodemo</a>,
-          <a href="https://www.flaticon.com/authors/meaicon"  title="meaicon">meaicon</a>,
-          <a href="https://www.flaticon.com/authors/altop7"  title="ALTOP7">ALTOP7</a> 
-          from <a href="https://www.flaticon.com/"  title="Flaticon">www.flaticon.com</a>
+          <a href="https://www.freepik.com" title="Freepik">Freepik</a>,
+          <a href="https://www.flaticon.com/authors/hilmy-abiyyu-a" title="Hilmy Abiyyu A.">Hilmy Abiyyu A.</a>,
+          <a href="https://www.flaticon.com/authors/torticon" title="Torticon">Torticon</a>,
+          <a href="https://www.flaticon.com/authors/laura-reen" title="Laura Reen">Laura Reen</a>,
+          <a href="https://www.flaticon.com/authors/dokodemo" title="dokodemo">dokodemo</a>,
+          <a href="https://www.flaticon.com/authors/meaicon" title="meaicon">meaicon</a>,
+          <a href="https://www.flaticon.com/authors/altop7" title="ALTOP7">ALTOP7</a> 
+          from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
       </div>
   </footer>
 </body>

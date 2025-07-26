@@ -1,23 +1,32 @@
-<!-- templates/properties.html -->
 {% extends 'base.html' %}
 
 {% block title %}Properties - Real Estate Finance Tracker{% endblock %}
 
 {% block content %}
-<div class="main-content">
+<div class="content-container"> <!-- New container for content -->
     <div class="properties-page">
+        <!-- Notification Bar -->
+        {% if messages %}
+            <div class="notification-bar">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Properties</h1>
             <div style="display: flex; gap: 10px;">
-                <a href="{% url 'add_property' %}" class="btn-accent">Add New Property</a>
-                <a href="{% url 'add_transaction' %}" class="btn-positive">Add Transaction</a>
-                <a href="{% url 'add_bulk_transaction' %}" class="btn-alert">Bulk Transaction</a>
-                <a href="{% url 'transaction_log' %}" class="btn-secondary">View Log</a>
+                <!-- Use Metallic Buttons -->
+                <a href="{% url 'add_property' %}" class="btn-metallic btn-accent-metallic">Add New Property</a>
+                <a href="{% url 'add_transaction' %}" class="btn-metallic btn-positive-metallic">Add Transaction</a>
+                <a href="{% url 'add_bulk_transaction' %}" class="btn-metallic btn-alert-metallic">Bulk Transaction</a>
+                <a href="{% url 'transaction_log' %}" class="btn-metallic btn-secondary-metallic">View Log</a>
             </div>
         </div>
 
         {% if properties %}
-            <div class="property-table-container">
+            <div class="table-container">
                 <table class="property-table">
                     <thead>
                         <tr>
@@ -31,34 +40,34 @@
                             <th>Net Income</th>
                         </tr>
                     </thead>
-                <tbody>
-                    {% for prop_data in properties %}
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <a href="{% url 'property_detail' prop_data.property.id %}" 
-                                style="color: var(--color-gold); text-decoration: none;">
-                                    {{ prop_data.property.address }}
-                                </a>
-                                <a href="{% url 'edit_property' prop_data.property.id %}" 
-                                style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;" 
-                                title="Edit Property">
-                                    ✏️
-                                </a>
-                            </div>
-                        </td>
-                        <td>{{ prop_data.property.get_property_type_display }}</td>
-                        <td>{{ prop_data.property.purchase_date|date:"M d, Y" }}</td>
-                        <td>${{ prop_data.property.monthly_rent }}</td>
-                        <td>${{ prop_data.property.monthly_mortgage }}</td>
-                        <td style="color: var(--color-positive);">${{ prop_data.total_income|floatformat:2 }}</td>
-                        <td style="color: var(--color-negative);">${{ prop_data.total_expenses|floatformat:2 }}</td>
-                        <td style="color: {% if prop_data.net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
-                            ${{ prop_data.net_income|floatformat:2 }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+                    <tbody>
+                        {% for prop_data in properties %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <a href="{% url 'property_detail' prop_data.property.id %}" 
+                                    style="color: var(--color-gold); text-decoration: none;">
+                                        {{ prop_data.property.address }}
+                                    </a>
+                                    <a href="{% url 'edit_property' prop_data.property.id %}" 
+                                    style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;" 
+                                    title="Edit Property">
+                                        ✏️
+                                    </a>
+                                </div>
+                            </td>
+                            <td>{{ prop_data.property.get_property_type_display }}</td>
+                            <td>{{ prop_data.property.purchase_date|date:"M d, Y" }}</td>
+                            <td>${{ prop_data.property.monthly_rent }}</td>
+                            <td>${{ prop_data.property.monthly_mortgage }}</td>
+                            <td style="color: var(--color-positive);">${{ prop_data.total_income|floatformat:2 }}</td>
+                            <td style="color: var(--color-negative);">${{ prop_data.total_expenses|floatformat:2 }}</td>
+                            <td style="color: {% if prop_data.net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+                                ${{ prop_data.net_income|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
         {% else %}
@@ -66,10 +75,21 @@
                 <h3>No properties found</h3>
                 <p>You haven't added any properties yet.</p>
                 <div style="margin-top: 20px;">
-                    <a href="{% url 'add_property' %}" class="btn-accent">Add Your First Property</a>
+                    <!-- Use Metallic Button -->
+                    <a href="{% url 'add_property' %}" class="btn-metallic btn-accent-metallic">Add Your First Property</a>
                 </div>
             </div>
         {% endif %}
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationBar = document.querySelector('.notification-bar');
+    if (notificationBar) {
+        setTimeout(() => {
+            notificationBar.classList.add('fade-out');
+        }, 5000); // Hide after 5 seconds
+    }
+});
+</script>
 {% endblock %}

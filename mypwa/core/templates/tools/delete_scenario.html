@@ -1,0 +1,24 @@
+<!-- templates/tools/delete_scenario.html -->
+{% extends 'base.html' %}
+
+{% block title %}Delete Scenario - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <div class="card" style="text-align: center; padding: 40px;">
+            <h2 style="color: var(--color-negative);">⚠️ Delete Scenario</h2>
+            <p>Are you sure you want to delete the scenario <strong>"{{ scenario.name }}"</strong>?</p>
+            <p><strong>Growth Rate:</strong> {{ scenario.growth_rate }}%</p>
+            <p><strong>Description:</strong> {{ scenario.description|default:"No description" }}</p>
+            <p>This action cannot be undone.</p>
+            
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-negative" style="background-color: var(--color-negative); margin-right: 10px;">Yes, Delete</button>
+            </form>
+            <a href="{% url 'scenario_list' %}" class="btn-accent" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

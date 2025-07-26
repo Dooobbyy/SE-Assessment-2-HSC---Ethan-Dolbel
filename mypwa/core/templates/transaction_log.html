@@ -5,20 +5,31 @@
 
 {% block content %}
 <div class="main-content">
-    <div class="properties-page">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <!-- Notification Bar -->
+        {% if messages %}
+            <div class="notification-bar">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    <div class="properties-page"> <!-- Consider if this class is necessary or if main-content/card handles it -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;"> <!-- Added flex-wrap and gap -->
             <h1>Transaction Log</h1>
-            <div style="display: flex; gap: 10px;">
-                <a href="{% url 'add_transaction' %}" class="btn-accent">Add Transaction</a>
-                <a href="{% url 'add_bulk_transaction' %}" class="btn-alert">Bulk Transaction</a>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;"> <!-- Added flex-wrap -->
+                <!-- Use Metallic Button -->
+                <a href="{% url 'add_transaction' %}" class="btn-metallic btn-accent-metallic">Add Transaction</a>
+                <a href="{% url 'add_bulk_transaction' %}" class="btn-metallic btn-alert-metallic">Bulk Transaction</a>
             </div>
         </div>
 
         <!-- Filters -->
         <div class="card" style="margin-bottom: 20px;">
             <h3>Filter Transactions</h3>
+            <!-- Removed fixed widths from form and inputs, let CSS handle it -->
             <form method="get" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: end;">
-                <div class="form-group" style="flex: 1; min-width: 200px;">
+                <div class="form-group" style="flex: 1; min-width: 150px;"> <!-- Reduced min-width slightly -->
                     <label for="type">Transaction Type:</label>
                     <select name="type" id="type" class="form-control">
                         <option value="">All Types</option>
@@ -27,8 +38,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div class="form-group" style="flex: 1; min-width: 200px;">
+
+                <div class="form-group" style="flex: 1; min-width: 150px;"> <!-- Reduced min-width slightly -->
                     <label for="property">Property:</label>
                     <select name="property" id="property" class="form-control">
                         <option value="">All Properties</option>
@@ -37,19 +48,22 @@
                         {% endfor %}
                     </select>
                 </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn-accent">Filter</button>
-                    <a href="{% url 'transaction_log' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Clear</a>
-                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;"> <!-- Added flex-wrap -->
+                    <!-- Use Metallic Button -->
+                    <button type="submit" class="btn-metallic btn-accent-metallic">Filter</button>
+                    <!-- Use Metallic Button (as link) -->
+                    <a href="{% url 'transaction_log' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Clear</a>
             </form>
         </div>
 
         <!-- Transaction Log Table -->
         {% if transactions %}
-            <div class="card">
-                <div class="property-table-container">
-                    <table class="property-table">
+            <div class="card"> <!-- This card will now adapt -->
+                <!-- Use the standard, now flexible, table-container class -->
+                <div class="table-container"> <!-- No horizontal scroll here now -->
+                    <!-- Use the standard, now flexible, property-table class -->
+                    <table class="property-table"> <!-- Table will adapt to content -->
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -64,10 +78,10 @@
                             {% for transaction in transactions %}
                             <tr>
                                 <td>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 5px;"> <!-- Wrap icons -->
                                         {{ transaction.date|date:"M d, Y" }}
-                                        <a href="{% url 'edit_transaction' transaction.id %}" 
-                                        style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;" 
+                                        <a href="{% url 'edit_transaction' transaction.id %}"
+                                        style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;"
                                         title="Edit Transaction">
                                             ✏️
                                         </a>
@@ -76,15 +90,15 @@
                                 <td>
                                     {% if transaction.property %}
                                         <a href="{% url 'property_detail' transaction.property.id %}" style="color: var(--color-gold); text-decoration: none;">
-                                            {{ transaction.property.address|truncatechars:30 }}
+                                            {{ transaction.property.address|truncatechars:30 }} <!-- Truncation helps -->
                                         </a>
                                     {% else %}
                                         <span style="color: var(--color-muted);">No Property</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ transaction.get_transaction_type_display }}</td>
-                                <td>{{ transaction.description|default:"-"|truncatechars:50 }}</td>
-                                <td style="color: {% if transaction.transaction_type in 'rental_income,additional_income,other_income' %}var(--color-positive){% else %}var(--color-negative){% endif %}; font-weight: bold;">
+                                <td>{{ transaction.description|default:"-"|truncatechars:50 }} <!-- Truncation helps --></td>
+                                <td style="color: {% if transaction.transaction_type in 'rental_income,additional_income,other_income' %}var(--color-positive){% else %}var(--color-negative){% endif %}; font-weight: bold; text-align: right;">
                                     {% if transaction.transaction_type in 'maintenance,taxes,insurance,other_expense' %}-{% endif %}${{ transaction.amount|floatformat:2 }}
                                 </td>
                                 <td>{{ transaction.created_at|date:"M d, Y H:i" }}</td>
@@ -93,23 +107,24 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <!-- Summary Stats -->
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-divider);">
-                    <div style="display: flex; justify-content: space-around; text-align: center;">
-                        <div>
+                    <!-- Consider using CSS Grid or Flexbox for stats layout too -->
+                    <div style="display: flex; justify-content: space-around; text-align: center; flex-wrap: wrap; gap: 10px;"> <!-- Wrap stats -->
+                        <div style="flex: 1; min-width: 120px;"> <!-- Allow stats to shrink/wrap -->
                             <h4 style="margin: 0; color: var(--color-muted);">Total Transactions</h4>
                             <p style="margin: 5px 0 0 0; font-size: 1.5em;">{{ total_transactions }}</p>
                         </div>
-                        <div>
+                        <div style="flex: 1; min-width: 120px;">
                             <h4 style="margin: 0; color: var(--color-muted);">Total Income</h4>
                             <p style="margin: 5px 0 0 0; font-size: 1.5em; color: var(--color-positive);">+${{ total_income|floatformat:2 }}</p>
                         </div>
-                        <div>
+                        <div style="flex: 1; min-width: 120px;">
                             <h4 style="margin: 0; color: var(--color-muted);">Total Expenses</h4>
                             <p style="margin: 5px 0 0 0; font-size: 1.5em; color: var(--color-negative);">-${{ total_expenses|floatformat:2 }}</p>
                         </div>
-                        <div>
+                        <div style="flex: 1; min-width: 120px;">
                             <h4 style="margin: 0; color: var(--color-muted);">Net</h4>
                             <p style="margin: 5px 0 0 0; font-size: 1.5em; color: {% if net_amount >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
                                 ${{ net_amount|floatformat:2 }}
@@ -123,10 +138,21 @@
                 <h3>No transactions found</h3>
                 <p>There are no transactions matching your current filters.</p>
                 <div style="margin-top: 20px;">
-                    <a href="{% url 'add_transaction' %}" class="btn-accent">Add Your First Transaction</a>
+                    <!-- Use Metallic Button -->
+                    <a href="{% url 'add_transaction' %}" class="btn-metallic btn-accent-metallic">Add Your First Transaction</a>
                 </div>
             </div>
         {% endif %}
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationBar = document.querySelector('.notification-bar');
+    if (notificationBar) {
+        setTimeout(() => {
+            notificationBar.classList.add('fade-out');
+        }, 5000); // Hide after 5 seconds
+    }
+});
+</script>
 {% endblock %}

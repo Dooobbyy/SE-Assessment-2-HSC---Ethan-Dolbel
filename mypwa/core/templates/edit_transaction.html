@@ -8,7 +8,8 @@
     <div class="form-container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Edit Transaction</h1>
-            <a href="{% url 'transaction_log' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Transaction Log</a>
+            <!-- Use Metallic Button (Red) -->
+            <a href="{% url 'transaction_log' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Transaction Log</a>
         </div>
         
         <form method="post" class="card">
@@ -55,9 +56,12 @@
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
-                <button type="submit" class="btn-accent">Update Transaction</button>
-                <button type="button" class="btn-alert" onclick="confirmDelete()">Delete Transaction</button>
-                <a href="{% url 'transaction_log' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
+                <!-- Use Metallic Button -->
+                <button type="submit" class="btn-metallic btn-accent-metallic">Update Transaction</button>
+                <!-- Use Metallic Button -->
+                <button type="button" class="btn-metallic btn-alert-metallic" onclick="confirmDelete()">Delete Transaction</button>
+                <!-- Use Metallic Button (Red) -->
+                <a href="{% url 'transaction_log' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
             </div>
         </form>
     </div>
@@ -78,8 +82,10 @@
         <form method="post" style="display: flex; gap: 10px; margin-top: 20px;">
             {% csrf_token %}
             <input type="hidden" name="delete" value="true">
-            <button type="submit" class="btn-negative" style="background-color: var(--color-negative);">Yes, Delete Transaction</button>
-            <button type="button" class="btn-accent" onclick="closeModal()">Cancel</button>
+            <!-- Use Metallic Button (Red) -->
+            <button type="submit" class="btn-metallic btn-negative-metallic" style="background-color: var(--color-negative);">Yes, Delete Transaction</button>
+            <!-- Use Metallic Button -->
+            <button type="button" class="btn-metallic btn-accent-metallic" onclick="closeModal()">Cancel</button>
         </form>
     </div>
 </div>

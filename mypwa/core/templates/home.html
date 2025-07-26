@@ -9,33 +9,33 @@
 
     <!-- Summary Cards Section -->
     <div class="stats-grid">
-        <!-- Card 1: Total Income -->
         <div class="card">
             <h3>Total Income</h3>
-            <h2>${{ total_income|floatformat:2 }}</h2>
+            <!-- Reverted to standard color -->
+            <h2 style="color: var(--color-positive);">
+                ${{ total_income|floatformat:2 }}
+            </h2>
         </div>
-
-        <!-- Card 2: Total Expenses -->
         <div class="card">
             <h3>Total Expenses</h3>
-            <h2>${{ total_expenses|floatformat:2 }}</h2>
+            <!-- Reverted to standard color -->
+            <h2 style="color: var(--color-negative);">
+                ${{ total_expenses|floatformat:2 }}
+            </h2>
         </div>
-
-        <!-- Card 3: Net Profit/Loss -->
         <div class="card">
             <h3>Net Profit/Loss</h3>
-            <h2 style="color: {% if net_profit_loss >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">
+            <!-- Reverted to standard color (conditional) -->
+            <h2 style="color: {% if net_profit_loss >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
                 ${% if net_profit_loss >= 0 %}+{% endif %}{{ net_profit_loss|floatformat:2 }}
             </h2>
         </div>
     </div>
 
     <!-- Line Chart Section -->
-    <div class="charts-section">
-        <div class="card">
-            <h3>Monthly Income vs. Expenses</h3>
-            <canvas id="incomeExpenseLineChart"></canvas>
-        </div>
+    <div id="income-expense-card" class="card">
+        <h3>Monthly Income vs. Expenses</h3>
+        <canvas id="incomeExpenseLineChart"></canvas>
     </div>
 
     <!-- Alerts Section -->
@@ -48,63 +48,70 @@
 </div>
 
 <script>
-    // Get the data from Django context
-    const months = {{ months|safe }};
-    const incomeData = {{ income_data }};
-    const expenseData = {{ expense_data }};
+    // Render the Chart.js line chart
+    document.addEventListener('DOMContentLoaded', function () {
+        // Get the data from Django context (passed from the view)
+        const months = {{ months|safe }}; // List of month labels
+        const incomeData = {{ income_data }}; // List of income values
+        const expenseData = {{ expense_data }}; // List of expense values (positive now)
 
-    // Create the chart
-    const ctx = document.getElementById('incomeExpenseLineChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'line',
-         {
-            labels: months,
-            datasets: [
-                {
-                    label: 'Income',
-                     incomeData,
-                    borderColor: 'green',
-                    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-                    tension: 0.1,
-                    fill: false
-                },
-                {
-                    label: 'Expenses',
-                     expenseData.map(expense => -expense),
-                    borderColor: 'red',
-                    backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                    tension: 0.1,
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toLocaleString();
+        // Get the canvas element
+        const ctx = document.getElementById('incomeExpenseLineChart').getContext('2d');
+
+        // Create the chart
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomeData,
+                        borderColor: 'green',
+                        backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                        tension: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expenseData, // Positive expenses
+                        borderColor: 'red',
+                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                        tension: 0,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Allow custom height
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            // Format y-axis to show currency
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
                         }
                     }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': $';
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': $';
+                                }
+                                label += Math.abs(context.parsed.y).toLocaleString();
+                                return label;
                             }
-                            label += Math.abs(context.parsed.y).toLocaleString();
-                            return label;
                         }
                     }
                 }
             }
-        }
+        });
     });
 </script>
 {% endblock %}

@@ -1,3 +1,4 @@
+<!-- templates/tools/value_calculator.html -->
 {% extends 'base.html' %}
 
 {% block title %}Value Calculator - Real Estate Finance Tracker{% endblock %}
@@ -7,7 +8,8 @@
     <div class="properties-page">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Property Value Calculator</h1>
-            <a href="{% url 'tools_home' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
+            <!-- Use Metallic Button (Red) -->
+            <a href="{% url 'tools_home' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
         </div>
         
         <div class="card">
@@ -36,12 +38,23 @@
                     {{ form.scenario_name }}
                 </div>
                 
-                <button type="submit" class="btn-accent">Calculate Projection</button>
+                <!-- Use Metallic Button -->
+                <button type="submit" class="btn-metallic btn-accent-metallic">Calculate Projection</button>
             </form>
         </div>
         
         {% if show_results %}
-        <div class="card">
+        <div class="card" style="position: relative;">
+            <!-- Delete button in top right corner -->
+            <form method="post" style="position: absolute; top: 10px; right: 10px;" onsubmit="return confirm('Are you sure you want to clear this projection?');">
+                {% csrf_token %}
+                <input type="hidden" name="clear_projection" value="true">
+                <!-- Use Metallic Button (Red, styled as icon) -->
+                <button type="submit" class="btn-metallic btn-negative-metallic" style="background-color: transparent; border: none; color: var(--color-negative); font-size: 1.5em; cursor: pointer; padding: 5px 10px;" title="Clear Projection">
+                    ×
+                </button>
+            </form>
+            
             <h3>{{ scenario_name }}</h3>
             
             <div class="stats-grid">
@@ -92,20 +105,13 @@
                                 {% if forloop.first %}
                                     -
                                 {% else %}
-                                    {% with prev_value=value_history|slice:forloop.counter0|last %}
-                                        {% if prev_value %}
-                                            {% widthratio item.value 1 1 as current %}
-                                            {% widthratio prev_value.value 1 1 as previous %}
-                                            {% if previous > 0 %}
-                                                {% widthratio current previous 100 as percentage %}
-                                                +{{ percentage|add:"-100"|floatformat:2 }}%
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    {% endwith %}
+                                    {% if item.growth > 0 %}
+                                        <span style="color: var(--color-positive);">+{{ item.growth|floatformat:2 }}%</span>
+                                    {% elif item.growth < 0 %}
+                                        <span style="color: var(--color-negative);">{{ item.growth|floatformat:2 }}%</span>
+                                    {% else %}
+                                        0.00%
+                                    {% endif %}
                                 {% endif %}
                             </td>
                         </tr>

@@ -1,0 +1,89 @@
+<!-- templates/tools/scenario_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Scenario Management - Real Estate Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Notification Bar -->
+        {% if messages %}
+            <div class="notification-bar">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    <div class="properties-page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Scenario Management</h1>
+            <!-- Use Metallic Button -->
+            <a href="{% url 'add_scenario' %}" class="btn-metallic btn-accent-metallic">Add New Scenario</a>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <!-- Use Metallic Button -->
+            <a href="{% url 'scenario_comparison' %}" class="btn-metallic btn-positive-metallic">Compare Scenarios</a>
+            <!-- Use Metallic Button (Red) -->
+            <a href="{% url 'tools_home' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
+        </div>
+        
+        {% if scenarios %}
+            <div class="card">
+                <h3>Available Scenarios</h3>
+                <div class="property-table-container">
+                    <table class="property-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Growth Rate</th>
+                                <th>Description</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for scenario in scenarios %}
+                            <tr>
+                                <td>{{ scenario.name }}</td>
+                                <td>{{ scenario.growth_rate }}%</td>
+                                <td>{{ scenario.description|default:"-"|truncatechars:50 }}</td>
+                                <td>{{ scenario.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <form method="post" action="{% url 'delete_scenario' scenario.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this scenario?');">
+                                        {% csrf_token %}
+                                        <!-- Use Metallic Button (Red, styled as icon) -->
+                                        <button type="submit" class="btn-metallic btn-negative-metallic" style="background: none; border: none; color: var(--color-negative); cursor: pointer; font-size: 1.2em; padding: 5px 10px;" title="Delete Scenario">
+                                            🗑️
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="card" style="text-align: center; padding: 40px;">
+                <h3>No scenarios found</h3>
+                <p>You haven't added any scenarios yet.</p>
+                <div style="margin-top: 20px;">
+                    <!-- Use Metallic Button -->
+                    <a href="{% url 'add_scenario' %}" class="btn-metallic btn-accent-metallic">Add Your First Scenario</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationBar = document.querySelector('.notification-bar');
+    if (notificationBar) {
+        setTimeout(() => {
+            notificationBar.classList.add('fade-out');
+        }, 5000); // Hide after 5 seconds
+    }
+});
+</script>
+{% endblock %}

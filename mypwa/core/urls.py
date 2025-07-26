@@ -16,6 +16,10 @@ urlpatterns = [
     # Tools URLs
     path('tools/', views.tools_home, name='tools_home'),
     path('tools/value-calculator/', views.property_value_calculator, name='value_calculator'),
-    path('tools/scenario-modeling/', views.scenario_modeling, name='scenario_modeling'),
+    path('tools/scenarios/add/', views.add_scenario, name='add_scenario'),
     path('tools/trend-tracking/', views.trend_tracking, name='trend_tracking'),
+        #Scenario URLs
+        path('tools/scenarios/', views.scenario_list, name='scenario_list'),
+        path('tools/scenarios/delete/<int:scenario_id>/', views.delete_scenario, name='delete_scenario'),
+        path('tools/scenarios/compare/', views.scenario_comparison, name='scenario_comparison'),
 ]

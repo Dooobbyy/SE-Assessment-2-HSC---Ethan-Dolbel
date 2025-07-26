@@ -1,6 +1,6 @@
 # core/forms.py
 from django import forms
-from .models import Property, Transaction
+from .models import Property, Transaction, Scenario
 
 from django import forms
 from .models import Property
@@ -90,4 +90,37 @@ class BulkTransactionForm(forms.Form):
     description = forms.CharField(
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         required=False
+    )
+
+class ScenarioForm(forms.ModelForm):
+    class Meta:
+        model = Scenario
+        fields = ['name', 'growth_rate', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'growth_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['growth_rate'].help_text = "Enter growth rate as a percentage (e.g., 3.5 for 3.5%)"
+
+class ScenarioComparisonForm(forms.Form):
+    property = forms.ModelChoiceField(
+        queryset=Property.objects.all(),
+        required=True,
+        label="Select Property"
+    )
+    years_ahead = forms.IntegerField(
+        min_value=1,
+        initial=5,
+        label="Years to Project",
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+    scenarios = forms.ModelMultipleChoiceField(
+        queryset=Scenario.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        label="Select Scenarios to Compare"
     )

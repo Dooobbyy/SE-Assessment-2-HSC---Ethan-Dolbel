@@ -34,7 +34,7 @@ class Property(models.Model):
     def is_owned_outright(self):
         return self.property_type == 'owned_outright'
     
-        # Calculate total income for the property
+    # Calculate total income for the property
     def calculate_total_income(self):
         from django.db.models import Sum
         
@@ -82,24 +82,19 @@ class Property(models.Model):
         print(f"Mortgage: ${self.monthly_mortgage}")
         print(f"Property Type: {self.property_type}")
         
-        # Base mortgage expense - ONLY for properties that have mortgages
+        # Base mortgage expense - ONLY for properties that are NOT owned outright
         # Owned Outright properties should not have mortgage expenses
-        if self.property_type != 'owned_outright' and self.monthly_mortgage > 0:
+        if self.property_type != 'owned_outright':
+            # Base mortgage expense
             today = date.today()
             purchase_date = self.purchase_date
             months_owned = (today.year - purchase_date.year) * 12 + (today.month - purchase_date.month)
-            
-            # NO adjustment for current month - keep the original working calculation
-            # months_owned remains as is, no subtraction
-            
-            # Debugging: Print months owned
-            print(f"Months Owned: {months_owned}")
             
             if months_owned > 0:
                 total_expenses += self.monthly_mortgage * months_owned
                 print(f"Base Mortgage Expense: ${total_expenses}")
         else:
-            print("No mortgage expense added (owned outright or no mortgage)")
+            print("No mortgage expense added (owned outright)")
         
         # Additional expense transactions for this property
         property_expenses = Transaction.objects.filter(
@@ -125,14 +120,21 @@ class Property(models.Model):
         if not self.purchase_price:
             return 0
         
+        from datetime import date
         today = date.today()
         years_owned = (today.year - self.purchase_date.year) + \
                      (today.month - self.purchase_date.month) / 12
         
         if years_owned < 0:
             years_owned = 0
-            
-        current_value = float(self.purchase_price) * ((1 + annual_growth_rate) ** years_owned)
+        
+        # Convert all values to float for consistent calculation
+        purchase_price_float = float(self.purchase_price)
+        growth_rate_float = float(annual_growth_rate)
+        years_owned_float = float(years_owned)
+        
+        # Calculate current value
+        current_value = purchase_price_float * ((1 + growth_rate_float) ** years_owned_float)
         return round(current_value, 2)
     
     def calculate_future_value(self, years_ahead=5, annual_growth_rate=0.03):
@@ -140,16 +142,39 @@ class Property(models.Model):
         current_value = self.calculate_current_value(annual_growth_rate)
         if current_value == 0:
             return 0
-            
-        future_value = current_value * ((1 + annual_growth_rate) ** years_ahead)
+        
+        # Convert to float for calculation
+        current_value_float = float(current_value)
+        growth_rate_float = float(annual_growth_rate)
+        years_ahead_float = float(years_ahead)
+        
+        future_value = current_value_float * ((1 + growth_rate_float) ** years_ahead_float)
         return round(future_value, 2)
-    
+
+    # Update calculate_roi method
+    def calculate_roi(self, annual_growth_rate=0.03):
+        """Calculate Return on Investment"""
+        if not self.purchase_price:
+            return 0
+        
+        current_value = self.calculate_current_value(annual_growth_rate)
+        purchase_price_float = float(self.purchase_price)
+        current_value_float = float(current_value)
+        
+        if purchase_price_float == 0:
+            return 0
+        
+        roi = ((current_value_float - purchase_price_float) / purchase_price_float) * 100
+        return round(roi, 2)
+
+    # Update get_value_history method
     def get_value_history(self, years_back=5, annual_growth_rate=0.03):
         """Get value history for the past N years"""
         if not self.purchase_price:
             return []
         
         history = []
+        from datetime import date
         today = date.today()
         
         for i in range(years_back, -1, -1):
@@ -157,22 +182,30 @@ class Property(models.Model):
             years_since_purchase = year - self.purchase_date.year
             
             if years_since_purchase >= 0:
-                value = float(self.purchase_price) * ((1 + annual_growth_rate) ** years_since_purchase)
+                # Convert to float for calculation
+                purchase_price_float = float(self.purchase_price)
+                growth_rate_float = float(annual_growth_rate)
+                years_since_purchase_float = float(years_since_purchase)
+                
+                value = purchase_price_float * ((1 + growth_rate_float) ** years_since_purchase_float)
+                
+                # Calculate growth percentage compared to the previous year
+                if len(history) > 0:
+                    previous_value = history[-1]['value']
+                    if previous_value != 0:
+                        growth_percentage = ((value - previous_value) / previous_value) * 100
+                    else:
+                        growth_percentage = 0
+                else:
+                    growth_percentage = 0
+                
                 history.append({
                     'year': year,
-                    'value': round(value, 2)
+                    'value': round(value, 2),
+                    'growth': round(growth_percentage, 2)  # Add growth percentage
                 })
         
         return history
-    
-    def calculate_roi(self, annual_growth_rate=0.03):
-        """Calculate Return on Investment"""
-        if not self.purchase_price:
-            return 0
-        
-        current_value = self.calculate_current_value(annual_growth_rate)
-        roi = ((current_value - float(self.purchase_price)) / float(self.purchase_price)) * 100
-        return round(roi, 2)
 
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
@@ -194,3 +227,12 @@ class Transaction(models.Model):
     
     def __str__(self):
         return f"{self.transaction_type}: ${self.amount} on {self.date}"
+    
+class Scenario(models.Model):
+    name = models.CharField(max_length=100)
+    growth_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.growth_rate}%)"

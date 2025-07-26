@@ -1,7 +1,7 @@
-<!-- templates/add_bulk_transaction.html -->
+<!-- templates/bulk_transaction.html -->
 {% extends 'base.html' %}
 
-{% block title %}Add Bulk Transaction - Real Estate Finance Tracker{% endblock %}
+{% block title %}Bulk Transaction - Real Estate Finance Tracker{% endblock %}
 
 {% block content %}
 <div class="main-content">
@@ -11,21 +11,32 @@
         <form method="post" class="card">
             {% csrf_token %}
             
+            <!-- Display non-field errors -->
+            {% if form.non_field_errors %}
+                <div class="alert" style="background-color: var(--color-negative); color: white; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
             <div class="form-group">
                 <label>Select Properties:</label>
-                <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--color-gold); border-radius: 4px; padding: 10px;">
-                    {{ form.properties }}
+                <div class="property-checkbox-list">
+                    <ul class="checkbox-list">
+                        {% for property in properties %}
+                            <li class="checkbox-item">
+                                <span>{{ property.address }} ({{ property.get_property_type_display }})</span>
+                                <input type="checkbox" name="properties" value="{{ property.id }}" id="property_{{ property.id }}">
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </div>
-                {% if form.properties.errors %}
-                    <div class="form-error">{{ form.properties.errors }}</div>
-                {% endif %}
             </div>
             
             <div class="form-group">
                 <label for="{{ form.date.id_for_label }}">Date:</label>
                 {{ form.date }}
                 {% if form.date.errors %}
-                    <div class="form-error">{{ form.date.errors }}</div>
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.date.errors }}</div>
                 {% endif %}
             </div>
             
@@ -33,7 +44,7 @@
                 <label for="{{ form.transaction_type.id_for_label }}">Transaction Type:</label>
                 {{ form.transaction_type }}
                 {% if form.transaction_type.errors %}
-                    <div class="form-error">{{ form.transaction_type.errors }}</div>
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.transaction_type.errors }}</div>
                 {% endif %}
             </div>
             
@@ -41,7 +52,7 @@
                 <label for="{{ form.amount.id_for_label }}">Amount ($):</label>
                 {{ form.amount }}
                 {% if form.amount.errors %}
-                    <div class="form-error">{{ form.amount.errors }}</div>
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.amount.errors }}</div>
                 {% endif %}
             </div>
             
@@ -49,13 +60,15 @@
                 <label for="{{ form.description.id_for_label }}">Description:</label>
                 {{ form.description }}
                 {% if form.description.errors %}
-                    <div class="form-error">{{ form.description.errors }}</div>
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.description.errors }}</div>
                 {% endif %}
             </div>
             
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="submit" class="btn-accent">Add Transaction to Selected Properties</button>
-                <a href="{% url 'properties' %}" class="btn-negative" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <!-- Use Metallic Button -->
+                <button type="submit" class="btn-metallic btn-accent-metallic">Add Transaction to Selected Properties</button>
+                <!-- Use Metallic Button (Red) -->
+                <a href="{% url 'properties' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
             </div>
         </form>
     </div>

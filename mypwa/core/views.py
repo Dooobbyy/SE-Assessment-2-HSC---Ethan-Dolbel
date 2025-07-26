@@ -1,8 +1,8 @@
 # core/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import Property, Transaction
-from .forms import PropertyForm,  TransactionForm, BulkTransactionForm, ValuePredictionForm
+from .models import Property, Transaction, Scenario
+from .forms import PropertyForm, TransactionForm, BulkTransactionForm, ValuePredictionForm, ScenarioComparisonForm, ScenarioForm
 from datetime import date
 from dateutil.relativedelta import relativedelta
 import calendar
@@ -53,11 +53,11 @@ def home(request):
         
         # Calculate total expenses for this month  
         expenses = calculate_monthly_expenses(year, month)
-        expense_data.append(float(expenses))
+        expense_data.append(float(expenses))  # Ensure expenses are positive
     
     # Calculate summary metrics
-    total_income = sum(income_data)
-    total_expenses = sum(expense_data)
+    total_income = sum(property_obj.calculate_total_income() for property_obj in Property.objects.all())
+    total_expenses = sum(property_obj.calculate_total_expenses() for property_obj in Property.objects.all())
     net_profit_loss = total_income - total_expenses
     
     context = {
@@ -105,39 +105,59 @@ def add_property(request):
     return render(request, 'add_property.html', {'form': form})
 
 def calculate_monthly_income(year, month):
-    from django.db import models
+    from django.db.models import Sum
+    from datetime import date
     
     total_income = 0
     
-    # Get properties owned during this month (purchase date <= end of this month)
-    month_end = date(year, month, calendar.monthrange(year, month)[1])
+    # Get all properties
+    properties = Property.objects.all()
     
-    # Base rental income from properties
-    properties = Property.objects.filter(purchase_date__lte=month_end)
-    for property in properties:
-        total_income += property.monthly_rent
+    # Add base rental income for properties that were owned during this month
+    for property_obj in properties:
+        # Check if property was owned during this month
+        if property_obj.purchase_date.year < year or (property_obj.purchase_date.year == year and property_obj.purchase_date.month <= month):
+            # For rental and owned_outright properties, add monthly rent
+            if property_obj.property_type in ['rental', 'owned_outright'] and property_obj.monthly_rent > 0:
+                total_income += float(property_obj.monthly_rent)
     
-    # Additional income transactions
-    additional_income = Transaction.objects.filter(
+    # Add transaction-based income for this specific month
+    month_income = Transaction.objects.filter(
         date__year=year,
         date__month=month,
-        transaction_type__in=['additional_income', 'other_income', 'rental_income']
-    ).aggregate(models.Sum('amount'))['amount__sum'] or 0
+        transaction_type__in=['rental_income', 'additional_income', 'other_income']
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
     
-    total_income += additional_income
+    total_income += float(month_income)
     return total_income
 
 def calculate_monthly_expenses(year, month):
-    from django.db import models
+    from django.db.models import Sum
+    from datetime import date
     
-    # Get all expense transactions for the month
-    expenses = Transaction.objects.filter(
+    total_expenses = 0
+    
+    # Get all properties
+    properties = Property.objects.all()
+    
+    # Add base mortgage expenses for properties that were owned during this month
+    # EXCEPT for owned_outright properties (they don't have mortgages)
+    for property_obj in properties:
+        # Check if property was owned during this month
+        if property_obj.purchase_date.year < year or (property_obj.purchase_date.year == year and property_obj.purchase_date.month <= month):
+            # Add monthly mortgage for properties that are NOT owned_outright
+            if property_obj.property_type != 'owned_outright' and property_obj.monthly_mortgage > 0:
+                total_expenses += float(property_obj.monthly_mortgage)
+    
+    # Add transaction-based expenses for this specific month
+    month_expenses = Transaction.objects.filter(
         date__year=year,
         date__month=month,
         transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense']
-    ).aggregate(models.Sum('amount'))['amount__sum'] or 0
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
     
-    return expenses
+    total_expenses += float(month_expenses)
+    return total_expenses
 
 def add_transaction(request):
     if request.method == 'POST':
@@ -159,13 +179,14 @@ def add_bulk_transaction(request):
     if request.method == 'POST':
         form = BulkTransactionForm(request.POST)
         if form.is_valid():
-            properties = form.cleaned_data['properties']
+            properties = form.cleaned_data['properties']  # This is a QuerySet
             date_val = form.cleaned_data['date']
             amount = form.cleaned_data['amount']
             transaction_type = form.cleaned_data['transaction_type']
             description = form.cleaned_data['description']
             
             # Create transactions for each selected property
+            created_count = 0
             for property_obj in properties:
                 Transaction.objects.create(
                     property=property_obj,
@@ -174,13 +195,20 @@ def add_bulk_transaction(request):
                     transaction_type=transaction_type,
                     description=description
                 )
+                created_count += 1
             
-            messages.success(request, f'Transaction added to {properties.count()} properties successfully!')
-            return redirect('properties')
+            messages.success(request, f'Transaction added to {created_count} properties successfully!')
+            return redirect('transaction_log')  # Redirect to transaction log instead of properties
     else:
         form = BulkTransactionForm()
     
-    return render(request, 'add_bulk_transaction.html', {'form': form})
+    # Pass the properties queryset to the template for better control if needed
+    properties_for_template = Property.objects.all().order_by('address')
+    
+    return render(request, 'add_bulk_transaction.html', {
+        'form': form,
+        'properties': properties_for_template
+    })
 
 def property_detail(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
@@ -320,6 +348,11 @@ def tools_home(request):
 def property_value_calculator(request):
     """Property value prediction calculator"""
     if request.method == 'POST':
+        # Check if user wants to clear the projection
+        if 'clear_projection' in request.POST:
+            # Clear the session or redirect to clean state
+            return redirect('value_calculator')
+        
         form = ValuePredictionForm(request.POST)
         if form.is_valid():
             property_obj = form.cleaned_data['property']
@@ -353,50 +386,68 @@ def property_value_calculator(request):
     
     return render(request, 'tools/value_calculator.html', context)
 
-def scenario_modeling(request):
-    """Scenario modeling tool"""
-    properties = Property.objects.all()
-    
-    # Default scenarios
-    scenarios = [
-        {'name': 'Conservative Growth', 'rate': 2.0},
-        {'name': 'Moderate Growth', 'rate': 3.5},
-        {'name': 'Aggressive Growth', 'rate': 6.0},
-        {'name': 'Market Decline', 'rate': -2.0},
-    ]
-    
-    results = []
-    
+def add_scenario(request):
     if request.method == 'POST':
-        property_id = request.POST.get('property')
-        years_ahead = int(request.POST.get('years_ahead', 5))
-        
-        if property_id:
-            property_obj = get_object_or_404(Property, id=property_id)
+        form = ScenarioForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Scenario added successfully!')
+            return redirect('scenario_list')
+    else:
+        form = ScenarioForm()
+    
+    return render(request, 'tools/add_scenario.html', {'form': form})
+
+def scenario_list(request):
+    scenarios = Scenario.objects.all().order_by('-created_at')
+    return render(request, 'tools/scenario_list.html', {'scenarios': scenarios})
+
+def delete_scenario(request, scenario_id):
+    scenario = get_object_or_404(Scenario, id=scenario_id)
+    if request.method == 'POST':
+        scenario_name = scenario.name
+        scenario.delete()
+        messages.success(request, f'Scenario "{scenario_name}" deleted successfully!')
+        return redirect('scenario_list')
+    return render(request, 'tools/delete_scenario.html', {'scenario': scenario})
+
+def scenario_comparison(request):
+    if request.method == 'POST':
+        form = ScenarioComparisonForm(request.POST)
+        if form.is_valid():
+            property_obj = form.cleaned_data['property']
+            years_ahead = form.cleaned_data['years_ahead']
+            selected_scenarios = form.cleaned_data['scenarios']
             
-            for scenario in scenarios:
-                growth_rate = scenario['rate'] / 100
+            # Calculate values for each scenario
+            results = []
+            for scenario in selected_scenarios:
+                growth_rate = float(scenario.growth_rate) / 100
                 current_value = property_obj.calculate_current_value(growth_rate)
                 future_value = property_obj.calculate_future_value(years_ahead, growth_rate)
                 roi = property_obj.calculate_roi(growth_rate)
                 
                 results.append({
-                    'property': property_obj,
                     'scenario': scenario,
                     'current_value': current_value,
                     'future_value': future_value,
                     'roi': roi,
-                    'years_ahead': years_ahead
                 })
+            
+            context = {
+                'form': form,
+                'results': results,
+                'property': property_obj,
+                'years_ahead': years_ahead,
+                'show_results': True
+            }
+        else:
+            context = {'form': form}
+    else:
+        form = ScenarioComparisonForm()
+        context = {'form': form}
     
-    context = {
-        'properties': properties,
-        'scenarios': scenarios,
-        'results': results,
-        'show_results': len(results) > 0
-    }
-    
-    return render(request, 'tools/scenario_modeling.html', context)
+    return render(request, 'tools/scenario_comparison.html', context)
 
 def trend_tracking(request):
     """Trend tracking and comparison tool"""
@@ -410,15 +461,20 @@ def trend_tracking(request):
     for property_obj in properties:
         current_value = property_obj.calculate_current_value(0.03)  # Default 3% growth
         roi = property_obj.calculate_roi(0.03)
+        purchase_price = float(property_obj.purchase_price)
+        
+        # Calculate value change (this is what was causing issues in the template)
+        value_change = current_value - purchase_price
         
         portfolio_data.append({
             'property': property_obj,
             'current_value': current_value,
             'roi': roi,
-            'purchase_price': float(property_obj.purchase_price)
+            'purchase_price': purchase_price,
+            'value_change': value_change  # Add this calculated value
         })
         
-        total_investment += float(property_obj.purchase_price)
+        total_investment += purchase_price
         total_current_value += current_value
     
     # Portfolio summary
