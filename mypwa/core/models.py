@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import date
 import calendar
 from django.contrib.auth.models import AbstractUser
+from django.db.models import Sum
 
 
 class Property(models.Model):
@@ -38,7 +39,7 @@ class Property(models.Model):
         return self.property_type == 'owned_outright'
     
     def calculate_total_income(self):
-        from datetime import date, timedelta
+        from datetime import date
         from decimal import Decimal
         from django.db.models import Sum
         
@@ -48,25 +49,17 @@ class Property(models.Model):
         print(f"Calculating income for {self.address}")
         print(f"Weekly Rent: ${self.weekly_rent}")
         
-        # Base rental income - use the property's weekly_rent field
-        if self.property_type in ['rental', 'owned_outright'] and self.weekly_rent > 0:
-            today = date.today()
-            purchase_date = self.purchase_date
-            
-            # Exclude the purchase week
-            first_payday = purchase_date + timedelta(days=(4 - purchase_date.weekday()))  # First Friday after purchase
-            if first_payday <= today:
-                start_date = max(first_payday, self.tenant_move_in_date or purchase_date)
-                end_date = min(today, self.tenant_move_out_date or today)
+        # Base rental income from tenants
+        today = date.today()
+        for tenant in self.tenant_set.all():
+            # Check if tenant was active during the period
+            if tenant.move_in_date <= today:
+                days_owned = (today - tenant.move_in_date).days
+                weeks_owned = days_owned // 7
                 
-                # Calculate number of Fridays between start and end dates
-                current_date = start_date
-                while current_date <= end_date:
-                    if current_date.weekday() == 4:  # Friday
-                        total_income += Decimal(str(self.weekly_rent))
-                        print(f"Income on {current_date}: ${self.weekly_rent}")
-                    
-                    current_date += timedelta(days=1)
+                if weeks_owned > 0:
+                    total_income += Decimal(str(tenant.weekly_rent)) * weeks_owned
+                    print(f"Income from tenant: ${total_income}")
         
         # Additional transactions for this property
         property_income_result = Transaction.objects.filter(
@@ -86,10 +79,8 @@ class Property(models.Model):
 
     # Calculate total expenses for the property
     def calculate_total_expenses(self):
-        from django.db.models import Sum
-        import calendar
-        from decimal import Decimal
         from datetime import date
+        from decimal import Decimal
         
         total_expenses = Decimal('0.00')
         
@@ -104,17 +95,14 @@ class Property(models.Model):
             today = date.today()
             purchase_date = self.purchase_date
             
-            # Calculate the number of weeks owned
+            # Calculate number of days owned
             days_owned = (today - purchase_date).days
-            weeks_owned = days_owned // 7
             
-            # Calculate expenses based on weeks owned
-            if weeks_owned > 0:
-                weekly_mortgage_decimal = Decimal(str(self.weekly_mortgage))
-                total_expenses += weekly_mortgage_decimal * weeks_owned
-                print(f"Expense for {weeks_owned} weeks: ${total_expenses:.2f}")
-        else:
-            print("No mortgage expense added (owned outright or no mortgage)")
+            if days_owned > 0:
+                # Calculate daily mortgage
+                daily_mortgage = Decimal(str(self.weekly_mortgage)) / Decimal('7')
+                total_expenses += daily_mortgage * days_owned
+                print(f"Mortgage Expense: ${total_expenses}")
         
         # Additional expense transactions for this property
         property_expenses_result = Transaction.objects.filter(

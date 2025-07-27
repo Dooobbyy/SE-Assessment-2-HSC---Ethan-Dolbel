@@ -50,7 +50,7 @@
                         <tr>
                             <td>{{ data.property.address }}</td>
                             <td>${{ data.property.purchase_price|floatformat:2 }}</td>
-                            <td>${{ data.current_value|add:-data.property.purchase_price|floatformat:2 }}</td>
+                            <td style="color: {% if data.value_change >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">${{ data.value_change|floatformat:2 }}</td>
                             <td style="color: {% if data.value_change >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %};">
                                 ${{ data.value_change|floatformat:2 }}
                             </td>

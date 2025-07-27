@@ -47,15 +47,6 @@
             </div>
             
             <div class="form-group">
-                <label for="{{ form.weekly_rent.id_for_label }}">Weekly Rent ($):</label>
-                {{ form.weekly_rent }}
-                {% if form.weekly_rent.errors %}
-                    <div class="form-error" style="color: var(--color-negative);">{{ form.weekly_rent.errors }}</div>
-                {% endif %}
-                <small style="color: var(--color-muted);">{{ form.weekly_rent.help_text }}</small>
-            </div>
-            
-            <div class="form-group">
                 <label for="{{ form.weekly_mortgage.id_for_label }}">Weekly Mortgage ($):</label>
                 {{ form.weekly_mortgage }}
                 {% if form.weekly_mortgage.errors %}

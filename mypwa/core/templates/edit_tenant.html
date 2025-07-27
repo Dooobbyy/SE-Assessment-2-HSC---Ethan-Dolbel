@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Add Tenant - Real Estate Finance Tracker{% endblock %}
+{% block title %}Edit Tenant - Real Estate Finance Tracker{% endblock %}
 
 {% block content %}
 <div class="main-content">
     <div class="form-container">
-        <h1>Add Tenant</h1>
+        <h1>Edit Tenant</h1>
         
         <form method="post" class="card">
             {% csrf_token %}
@@ -14,7 +14,7 @@
             {{ form.as_p }}
             
             <!-- Submit Button -->
-            <button type="submit" class="btn-metallic btn-accent-metallic">Add Tenant</button>
+            <button type="submit" class="btn-metallic btn-accent-metallic">Save Changes</button>
             <a href="{% url 'property_detail' property.id %}" class="btn-metallic btn-negative-metallic">Cancel</a>
         </form>
     </div>

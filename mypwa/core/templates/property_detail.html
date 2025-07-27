@@ -6,6 +6,15 @@
 {% block content %}
 <div class="main-content">
     <div class="properties-page">
+        <!-- Notification Bar -->
+        {% if messages %}
+            <div class="notification-bar">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>{{ property.address }}</h1>
             <div style="display: flex; gap: 10px;">
@@ -43,8 +52,68 @@
         <div class="card" style="margin-bottom: 20px;">
             <h3>Property Details</h3>
             <p><strong>Purchase Date:</strong> {{ property.purchase_date|date:"M d, Y" }}</p>
-            <p><strong>Monthly Rent:</strong> ${{ property.monthly_rent }}</p>
-            <p><strong>Monthly Mortgage:</strong> ${{ property.monthly_mortgage }}</p>
+            <p><strong>Weekly Rent:</strong> ${{ property.weekly_rent }}</p>
+            <p><strong>Weekly Mortgage:</strong> ${{ property.weekly_mortgage }}</p>
+            <p><strong>Purchase Price:</strong> ${{ property.purchase_price }}</p>
+        </div>
+
+        <!-- Tenant Management Section -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Tenant Management</h3>
+                {% if property.property_type != 'owner_occupied' %}
+                    <!-- Use Metallic Button -->
+                    <a href="{% url 'add_tenant' property.id %}" class="btn-metallic btn-alert-metallic">Add New Tenant</a>
+                {% endif %}
+            </div>
+            
+            {% if property.property_type == 'owner_occupied' %}
+                <p>This property is owner-occupied. Tenant management is not available.</p>
+            {% else %}
+                {% if property.tenant_set.all %}
+                    <div class="property-table-container">
+                        <table class="property-table">
+                            <thead>
+                                <tr>
+                                    <th>Tenant #</th>
+                                    <th>Move-In Date</th>
+                                    <th>Move-Out Date</th>
+                                    <th>Weekly Rent</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tenant in property.tenant_set.all %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ tenant.move_in_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if tenant.move_out_date %}
+                                            {{ tenant.move_out_date|date:"M d, Y" }}
+                                        {% else %}
+                                            <em>Current</em>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ tenant.weekly_rent }}</td>
+                                    <td>
+                                        <div style="display: flex; gap: 5px;">
+                                            <a href="{% url 'edit_tenant' tenant.id %}" 
+                                               class="btn-metallic btn-secondary-metallic" 
+                                               style="padding: 5px 10px; text-decoration: none; font-size: 0.9em;">Edit</a>
+                                            <a href="{% url 'delete_tenant' tenant.id %}" 
+                                               class="btn-metallic btn-negative-metallic" 
+                                               style="padding: 5px 10px; text-decoration: none; font-size: 0.9em;">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No tenants have been added for this property yet.</p>
+                {% endif %}
+            {% endif %}
         </div>
 
         <!-- Transactions Section -->
@@ -94,4 +163,15 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationBar = document.querySelector('.notification-bar');
+    if (notificationBar) {
+        setTimeout(() => {
+            notificationBar.classList.add('fade-out');
+        }, 5000); // Hide after 5 seconds
+    }
+});
+</script>
 {% endblock %}

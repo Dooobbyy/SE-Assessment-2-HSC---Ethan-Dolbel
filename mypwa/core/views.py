@@ -12,9 +12,9 @@ from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.views.generic import View
 from django.http import HttpResponse
-from .models import Property, Transaction, Scenario
+from .models import Property, Transaction, Scenario, Tenant, WeeklyMortgageChange, WeeklyRentChange
 from .forms import PropertyForm, TransactionForm, BulkTransactionForm, ValuePredictionForm, ScenarioComparisonForm, ScenarioForm, SecureUserCreationForm, SecureAuthenticationForm, WeeklyRentChangeForm, WeeklyMortgageChangeForm, TenantForm
-from datetime import date
+from datetime import date, timedelta, timezone
 from dateutil.relativedelta import relativedelta
 import calendar
 import logging
@@ -213,21 +213,6 @@ def add_property(request):
     
     return render(request, 'add_property.html', {'form': form})
 
-def add_tenant(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
-    
-    if request.method == 'POST':
-        form = TenantForm(request.POST)
-        if form.is_valid():
-            tenant = form.save(commit=False)
-            tenant.property = property_obj
-            tenant.save()
-            return redirect('property_detail', property_id=property_id)
-    else:
-        form = TenantForm()
-    
-    return render(request, 'add_tenant.html', {'form': form})
-
 def calculate_monthly_income(year, month):
     from django.db.models import Sum
     from datetime import date, timedelta
@@ -235,36 +220,91 @@ def calculate_monthly_income(year, month):
     from decimal import Decimal
     
     total_income = Decimal('0.00')
+    today = date.today()
     
+    # Determine the actual end date for the calculation period
+    # If we are calculating for the current month/year, use today's date
+    # Otherwise, use the last day of the specified month
+    if year == today.year and month == today.month:
+        end_of_calculation_period = today
+    else:
+        end_of_calculation_period = date(year, month, calendar.monthrange(year, month)[1])
+    
+    # Define the start of the month being calculated
+    start_of_month = date(year, month, 1)
+
     # Get all properties
     properties = Property.objects.all()
     
     # Add base rental income for properties that were owned during this month
     for property_obj in properties:
-        # Check if property was owned during this month
-        if property_obj.purchase_date.year < year or (property_obj.purchase_date.year == year and property_obj.purchase_date.month <= month):
-            # For rental and owned_outright properties, add weekly rent converted to monthly
-            if property_obj.property_type in ['rental', 'owned_outright'] and property_obj.weekly_rent > 0:
-                # Calculate accurate monthly rent based on days in the month
-                days_in_month = calendar.monthrange(year, month)[1]
-                start_date = date(year, month, 1)
-                end_date = date(year, month, days_in_month)
+        # Check if property was owned during this month (at least partially)
+        # Property must have been purchased before or during the month being calculated
+        if property_obj.purchase_date <= end_of_calculation_period and \
+           (property_obj.purchase_date.year < year or 
+            (property_obj.purchase_date.year == year and property_obj.purchase_date.month <= month)):
+            
+            # For rental and owned_outright properties, calculate tenant income
+            if property_obj.property_type in ['rental', 'owned_outright']:
                 
-                # Exclude the purchase week
-                first_payday = property_obj.purchase_date + timedelta(days=(4 - property_obj.purchase_date.weekday()))
-                if first_payday <= end_date:
-                    start_date = max(first_payday, property_obj.tenant_move_in_date or start_date)
-                    end_date = min(end_date, property_obj.tenant_move_out_date or end_date)
+                # Iterate through all tenants for this property
+                for tenant in property_obj.tenant_set.all():
+                    # --- Check if the tenant was active during (part of) this calculation period ---
                     
-                    # Count Fridays in the month
-                    current_date = start_date
-                    while current_date <= end_date:
-                        if current_date.weekday() == 4:  # Friday
-                            total_income += Decimal(str(property_obj.weekly_rent))
+                    # Tenant's rental period starts on move_in_date
+                    tenant_start = tenant.move_in_date
+                    
+                    # Tenant's rental period ends on the day BEFORE move_out_date, or is ongoing (None)
+                    # If ongoing, consider it up to the end of our calculation period (today or end of month)
+                    if tenant.move_out_date:
+                        # Tenant's income stops the day before they move out
+                        tenant_end = tenant.move_out_date - timedelta(days=1)
+                    else:
+                        # Tenant is still active, income continues until our calculation period ends
+                        tenant_end = end_of_calculation_period
+
+                    # --- Find the overlap between the calculation period and the tenant's stay ---
+                    
+                    # The income period for this tenant in this month is the later of:
+                    #   - The start of the month being calculated
+                    #   - The tenant's move-in date
+                    income_period_start = max(start_of_month, tenant_start)
+                    
+                    # The income period for this tenant in this month is the earlier of:
+                    #   - The end of our calculation period (today if current month, else end of month)
+                    #   - The tenant's adjusted move-out date (or end of calculation period if still active)
+                    income_period_end = min(end_of_calculation_period, tenant_end)
+
+                    # --- Calculate income if there is a positive overlapping period ---
+                    # Check if the income period is valid (start is not after end)
+                    if income_period_start <= income_period_end:
+                        # Calculate the number of days the tenant was active in this period (earning rent)
+                        days_active = (income_period_end - income_period_start).days + 1 # +1 because both start and end dates count as full days of income
                         
-                        current_date += timedelta(days=1)
-    
-    # Add transaction-based income for this specific month
+                        if days_active > 0 and tenant.weekly_rent > 0:
+                            # Calculate daily rent based on the tenant's weekly rent
+                            daily_rent = Decimal(str(tenant.weekly_rent)) / Decimal('7')
+                            # Add the income for this tenant during this period
+                            income_for_tenant_period = daily_rent * days_active
+                            total_income += income_for_tenant_period
+                            
+                            # Debug prints
+                            print(f"Property: {property_obj.address}")
+                            print(f"  Tenant ID: {tenant.id}")
+                            print(f"    Move-In Date: {tenant.move_in_date}")
+                            print(f"    Move-Out Date: {tenant.move_out_date}")
+                            print(f"    Adjusted Tenant End Date (last income day): {tenant_end}")
+                            print(f"    Calculation Period Start: {start_of_month}")
+                            print(f"    Calculation Period End: {end_of_calculation_period}")
+                            print(f"    Income Period Start: {income_period_start}")
+                            print(f"    Income Period End: {income_period_end}")
+                            print(f"    Days Active (earning rent): {days_active}")
+                            print(f"    Weekly Rent: ${tenant.weekly_rent}")
+                            print(f"    Daily Rent: ${daily_rent}")
+                            print(f"    Income for Tenant: ${income_for_tenant_period}")
+                            print(f"  Total Income So Far: ${total_income}\n")
+
+    # --- Add transaction-based income for this specific month ---
     month_income_result = Transaction.objects.filter(
         date__year=year,
         date__month=month,
@@ -274,6 +314,10 @@ def calculate_monthly_income(year, month):
     month_income = month_income_result or Decimal('0.00')
     
     total_income += month_income
+    
+    # Debug print for final total income
+    print(f"Final Total Monthly Income for {year}-{month:02d} (up to {end_of_calculation_period}): ${total_income}")
+    
     return float(total_income)
 
 def calculate_monthly_expenses(year, month):
@@ -296,10 +340,23 @@ def calculate_monthly_expenses(year, month):
             if property_obj.property_type != 'owned_outright' and property_obj.weekly_mortgage > 0:
                 # Calculate accurate monthly mortgage based on days in the month
                 days_in_month = calendar.monthrange(year, month)[1]
-                weekly_mortgage_decimal = Decimal(str(property_obj.weekly_mortgage))
-                days_in_month_decimal = Decimal(str(days_in_month))
-                monthly_mortgage = weekly_mortgage_decimal * (days_in_month_decimal / Decimal('7'))
-                total_expenses += monthly_mortgage
+                start_date = date(year, month, 1)
+                end_date = date(year, month, days_in_month)
+                
+                # Exclude the purchase week
+                first_payday = property_obj.purchase_date + timedelta(days=(4 - property_obj.purchase_date.weekday()))
+                if first_payday <= end_date:
+                    start_date = max(first_payday, property_obj.tenant_move_in_date or start_date)
+                    end_date = min(end_date, property_obj.tenant_move_out_date or end_date)
+                    
+                    # Calculate number of days owned in the month
+                    days_owned = (end_date - start_date).days + 1
+                    
+                    if days_owned > 0:
+                        # Calculate daily mortgage
+                        daily_mortgage = Decimal(str(property_obj.weekly_mortgage)) / Decimal('7')
+                        total_expenses += daily_mortgage * days_owned
+                        print(f"Expense for {year}-{month}: ${total_expenses}")
     
     # Add transaction-based expenses for this specific month
     month_expenses_result = Transaction.objects.filter(
@@ -313,35 +370,74 @@ def calculate_monthly_expenses(year, month):
     total_expenses += month_expenses
     return float(total_expenses)
 
-def add_weekly_rent_change(request, property_id):
+@login_required
+def add_tenant(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
     
+    # Prevent adding tenants to owner-occupied properties
+    if property_obj.property_type == 'owner_occupied':
+        messages.error(request, "Cannot add tenants to an owner-occupied property.")
+        # Redirect back to the property detail page or properties list
+        return redirect('property_detail', property_id=property_id) # Or 'properties' if no detail view
+        
     if request.method == 'POST':
-        form = WeeklyRentChangeForm(request.POST)
+        form = TenantForm(request.POST)
         if form.is_valid():
-            change = form.save(commit=False)
-            change.property = property_obj
-            change.save()
-            return redirect('property_detail', property_id=property_id)
+            # Get the latest tenant for this property who doesn't have a move_out_date
+            latest_tenant = property_obj.tenant_set.filter(move_out_date__isnull=True).order_by('-move_in_date').first()
+            
+            # If there's a previous tenant, set their move_out_date to one day before new tenant's move_in_date
+            if latest_tenant:
+                new_tenant_move_in = form.cleaned_data['move_in_date']
+                from django.utils import timezone
+                latest_tenant.move_out_date = new_tenant_move_in - timezone.timedelta(days=1)
+                latest_tenant.save()
+                messages.info(request, f"Previous tenant's stay marked as ended on {latest_tenant.move_out_date}")
+            
+            # Save the new tenant
+            tenant = form.save(commit=False)
+            tenant.property = property_obj
+            tenant.save()
+            messages.success(request, "Tenant added successfully.")
+            return redirect('property_detail', property_id=property_id) # Or wherever appropriate
     else:
-        form = WeeklyRentChangeForm()
+        form = TenantForm()
     
-    return render(request, 'add_weekly_rent_change.html', {'form': form})
+    return render(request, 'add_tenant.html', {'form': form, 'property': property_obj})
 
-def add_weekly_mortgage_change(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+@login_required
+def edit_tenant(request, tenant_id):
+    tenant = get_object_or_404(Tenant, id=tenant_id)
+    property_obj = tenant.property
     
     if request.method == 'POST':
-        form = WeeklyMortgageChangeForm(request.POST)
+        form = TenantForm(request.POST, instance=tenant)
         if form.is_valid():
-            change = form.save(commit=False)
-            change.property = property_obj
-            change.save()
-            return redirect('property_detail', property_id=property_id)
+            form.save()
+            messages.success(request, "Tenant updated successfully.")
+            return redirect('property_detail', property_id=property_obj.id)
     else:
-        form = WeeklyMortgageChangeForm()
+        form = TenantForm(instance=tenant)
     
-    return render(request, 'add_weekly_mortgage_change.html', {'form': form})
+    return render(request, 'edit_tenant.html', {'form': form, 'property': property_obj})
+
+@login_required
+def delete_tenant(request, tenant_id):
+    tenant = get_object_or_404(Tenant, id=tenant_id)
+    property_obj = tenant.property # Get the related property object
+
+    if request.method == 'POST':
+        tenant.delete()
+        messages.success(request, "Tenant deleted successfully.")
+        # Redirect to the property detail page after deletion
+        return redirect('property_detail', property_id=property_obj.id)
+
+    # For GET request, render the confirmation page
+    # Pass both the tenant and the property object to the template context
+    return render(request, 'delete_tenant.html', {
+        'tenant': tenant,
+        'property': property_obj  # <-- Add this line
+    })
 
 @login_required
 def add_transaction(request):

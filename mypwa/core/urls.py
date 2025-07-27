@@ -43,4 +43,9 @@ urlpatterns = [
     path('tools/scenarios/add/', views.add_scenario, name='add_scenario'),
     path('tools/scenarios/delete/<int:scenario_id>/', views.delete_scenario, name='delete_scenario'),
     path('tools/scenarios/compare/', views.scenario_comparison, name='scenario_comparison'),
+    
+    #Tenant URLs
+    path('properties/<int:property_id>/add_tenant/', views.add_tenant, name='add_tenant'),
+    path('tenants/<int:tenant_id>/edit/', views.edit_tenant, name='edit_tenant'),
+    path('tenants/<int:tenant_id>/delete/', views.delete_tenant, name='delete_tenant'),
 ] 

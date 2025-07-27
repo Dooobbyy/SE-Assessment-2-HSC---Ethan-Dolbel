@@ -13,29 +13,22 @@ class PropertyForm(forms.ModelForm):
         fields = [
             'address',
             'purchase_date',
-            'tenant_move_in_date',
-            'tenant_move_out_date',
             'purchase_price',
             'property_type',
-            'weekly_rent',
             'weekly_mortgage',
         ]
         widgets = {
             'address': forms.TextInput(attrs={'class': 'form-control'}),
             'purchase_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'tenant_move_in_date': forms.DateInput(attrs={'type': 'date'}),
-            'tenant_move_out_date': forms.DateInput(attrs={'type': 'date'}),
             'purchase_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'property_type': forms.Select(attrs={'class': 'form-control'}),
-            'weekly_rent': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'weekly_mortgage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['weekly_rent'].help_text = "Enter weekly rental income (0 if not rented)"
         self.fields['weekly_mortgage'].help_text = "Enter weekly mortgage payment (0 if no mortgage)"
-        self.fields['purchase_price'].help_text = "Enter original purchase price"
+        self.fields['purchase_price'].help_text = "Purchase price excluding buying power"
         # Make purchase_price required
         self.fields['purchase_price'].required = True
 
@@ -58,6 +51,12 @@ class WeeklyMortgageChangeForm(forms.ModelForm):
         }
 
 class TenantForm(forms.ModelForm):
+    previous_tenant_end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        help_text="End date for the previous tenant (if applicable)"
+    )
+    
     class Meta:
         model = Tenant
         fields = ['move_in_date', 'move_out_date', 'weekly_rent']
@@ -66,6 +65,18 @@ class TenantForm(forms.ModelForm):
             'move_out_date': forms.DateInput(attrs={'type': 'date'}),
             'weekly_rent': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.property = kwargs.pop('property', None)
+        super().__init__(*args, **kwargs)
+    
+    def save(self, commit=True):
+        tenant = super().save(commit=False)
+        if self.property:
+            tenant.property = self.property
+        if commit:
+            tenant.save()
+        return tenant
 
 class ValuePredictionForm(forms.Form):
     property = forms.ModelChoiceField(
