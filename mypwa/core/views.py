@@ -18,7 +18,10 @@ from datetime import date, timedelta, timezone
 from dateutil.relativedelta import relativedelta
 import calendar
 import logging
-
+from django.db.models import Sum
+from datetime import date
+import calendar
+from decimal import Decimal
 
 TRANSACTION_TYPE_CHOICES = [
     ('rental_income', 'Rental Income'),
@@ -198,7 +201,7 @@ def properties(request):
         'properties': properties_with_financials
     }
     
-    return render(request, 'properties.html', context)
+    return render(request, 'property/properties.html', context)
 
 @login_required
 def add_property(request):
@@ -211,13 +214,9 @@ def add_property(request):
     else:
         form = PropertyForm()
     
-    return render(request, 'add_property.html', {'form': form})
+    return render(request, 'property/add_property.html', {'form': form})
 
 def calculate_monthly_income(year, month):
-    from django.db.models import Sum
-    from datetime import date, timedelta
-    import calendar
-    from decimal import Decimal
     
     total_income = Decimal('0.00')
     today = date.today()
@@ -321,10 +320,6 @@ def calculate_monthly_income(year, month):
     return float(total_income)
 
 def calculate_monthly_expenses(year, month):
-    from django.db.models import Sum
-    from datetime import date
-    import calendar
-    from decimal import Decimal
     
     total_expenses = Decimal('0.00')
     
@@ -403,7 +398,7 @@ def add_tenant(request, property_id):
     else:
         form = TenantForm()
     
-    return render(request, 'add_tenant.html', {'form': form, 'property': property_obj})
+    return render(request, 'tenants/add_tenant.html', {'form': form, 'property': property_obj})
 
 @login_required
 def edit_tenant(request, tenant_id):
@@ -419,7 +414,7 @@ def edit_tenant(request, tenant_id):
     else:
         form = TenantForm(instance=tenant)
     
-    return render(request, 'edit_tenant.html', {'form': form, 'property': property_obj})
+    return render(request, 'tenants/edit_tenant.html', {'form': form, 'property': property_obj})
 
 @login_required
 def delete_tenant(request, tenant_id):
@@ -434,10 +429,7 @@ def delete_tenant(request, tenant_id):
 
     # For GET request, render the confirmation page
     # Pass both the tenant and the property object to the template context
-    return render(request, 'delete_tenant.html', {
-        'tenant': tenant,
-        'property': property_obj  # <-- Add this line
-    })
+    return render(request, 'tenants/delete_tenant.html', { 'tenant': tenant, 'property': property_obj })
 
 @login_required
 def add_transaction(request):
@@ -454,7 +446,7 @@ def add_transaction(request):
         if property_id:
             form.fields['property'].initial = property_id
     
-    return render(request, 'add_transaction.html', {'form': form})
+    return render(request, 'transactions/add_transaction.html', {'form': form})
 
 @login_required
 def add_bulk_transaction(request):
@@ -487,10 +479,7 @@ def add_bulk_transaction(request):
     # Pass the properties queryset to the template for better control if needed
     properties_for_template = Property.objects.all().order_by('address')
     
-    return render(request, 'add_bulk_transaction.html', {
-        'form': form,
-        'properties': properties_for_template
-    })
+    return render(request, 'transactions/add_bulk_transaction.html', { 'form': form, 'properties': properties_for_template })
 
 @login_required
 def property_detail(request, property_id):
@@ -512,7 +501,7 @@ def property_detail(request, property_id):
         'net_income': net_income,
     }
     
-    return render(request, 'property_detail.html', context)
+    return render(request, 'property/property_detail.html', context)
 
 @login_required
 def transaction_log(request):
@@ -566,7 +555,7 @@ def transaction_log(request):
         'total_transactions': transactions.count(),
     }
     
-    return render(request, 'transaction_log.html', context)
+    return render(request, 'transactions/transaction_log.html', context)
 
 @login_required
 def edit_property(request, property_id):
@@ -606,7 +595,7 @@ def edit_property(request, property_id):
         'transaction_count': transaction_count,
     }
     
-    return render(request, 'edit_property.html', context)
+    return render(request, 'property/edit_property.html', context)
 
 def calculate_predicted_value(self, years_ahead=5, annual_growth_rate=0.03):
     """Calculate predicted value based on simple growth rate"""
@@ -813,4 +802,205 @@ def edit_transaction(request, transaction_id):
         'transaction': transaction_obj,
     }
     
-    return render(request, 'edit_transaction.html', context)
+    return render(request, 'transactions/edit_transaction.html', context)
+
+@login_required
+def tax_summary(request):
+    from datetime import date
+    from decimal import Decimal
+    print("========== DEBUG: tax_summary view started ==========")
+    # Get all properties for the current user
+    properties = Property.objects.all().order_by('purchase_date')
+    print(f"DEBUG: Found {properties.count()} properties")
+    # Calculate current financial year
+    today = date.today()
+    if today.month >= 7:  # If current month is July or later
+        financial_year = today.year
+    else:  # If current month is before July
+        financial_year = today.year - 1
+    # Calculate date range for current financial year (July 1 to today)
+    financial_year_start = date(financial_year, 7, 1)
+    financial_year_end = today  # Only up to today, not end of financial year
+    print(f"DEBUG: Financial Year: {financial_year}")
+    print(f"DEBUG: Period Start: {financial_year_start}")
+    print(f"DEBUG: Period End (Today): {financial_year_end}")
+    
+    # Prepare property data with actual earnings/spending so far
+    property_tax_data = []
+    total_income = Decimal('0.00')
+    total_expenses = Decimal('0.00')
+    for property_obj in properties:
+        print(f"--- DEBUG: Processing Property: {property_obj.address} (ID: {property_obj.id}) ---")
+        # Calculate income for period from start of financial year to today
+        property_income = calculate_actual_income(property_obj, financial_year_start, financial_year_end)
+        # Calculate expenses for period from start of financial year to today
+        property_expenses = calculate_actual_expenses(property_obj, financial_year_start, financial_year_end)
+        # Calculate pro-rated depreciation
+        depreciation = calculate_pro_rata_depreciation(property_obj, financial_year_start, financial_year_end)
+        # Net income for this property (exclude depreciation)
+        net_income = property_income - property_expenses
+        print(f"DEBUG:   Property Income: {property_income}")
+        print(f"DEBUG:   Property Expenses: {property_expenses}")
+        print(f"DEBUG:   Property Depreciation: {depreciation}")
+        print(f"DEBUG:   Property Net Income (w/o dep): {net_income}")
+        
+        # Filter transactions for the property within the date range
+        property_transactions = Transaction.objects.filter(
+            property=property_obj,
+            date__gte=financial_year_start,
+            date__lte=financial_year_end
+        ).order_by('date')
+        
+        print(f"  DEBUG:   Found {property_transactions.count()} transactions for {property_obj.address} within {financial_year_start} to {financial_year_end}")
+        for t in property_transactions:
+            print(f"  DEBUG:     Transaction ID {t.id}: {t.date}, {t.get_transaction_type_display()}, ${t.amount}")
+
+        property_tax_data.append({
+            'property': property_obj,
+            'income': property_income,
+            'expenses': property_expenses,
+            'depreciation': depreciation,
+            'net_income': net_income,
+            'transactions': property_transactions  # Add transactions to the context
+        })
+        total_income += property_income
+        total_expenses += property_expenses
+    
+    # Calculate total depreciation
+    total_depreciation = sum(item['depreciation'] for item in property_tax_data)
+    # Overall net income (exclude depreciation)
+    overall_net_income = total_income - total_expenses
+    
+    print(f"========== DEBUG: Final Summary ==========")
+    print(f"DEBUG: Total Income: {total_income}")
+    print(f"DEBUG: Total Expenses: {total_expenses}")
+    print(f"DEBUG: Total Depreciation: {total_depreciation}")
+    print(f"DEBUG: Overall Net Income (w/o dep): {overall_net_income}")
+    print("========== DEBUG: tax_summary view finished ==========")
+    
+    context = {
+        'properties_data': property_tax_data,
+        'financial_year': financial_year,
+        'financial_year_display': f"{financial_year}-{financial_year + 1}",
+        'period_start': financial_year_start,
+        'period_end': financial_year_end,
+        'total_income': total_income,
+        'total_expenses': total_expenses,
+        'total_depreciation': total_depreciation,
+        'overall_net_income': overall_net_income,
+        'generated_date': date.today()
+    }
+    return render(request, 'tax_summary.html', context)
+
+def calculate_actual_income(property_obj, start_date, end_date):
+    """Calculate actual income earned from start_date to end_date"""
+    from decimal import Decimal
+    print(f"  DEBUG:   --> calculate_actual_income for '{property_obj.address}' (ID: {property_obj.id})")
+    print(f"  DEBUG:       Period: {start_date} to {end_date}")
+    total_income = Decimal('0.00')
+
+    # Calculate tenant income for the actual period
+    tenant_income = Decimal('0.00')
+    print(f"  DEBUG:       Checking {property_obj.tenant_set.count()} tenants...")
+    for tenant in property_obj.tenant_set.all():
+        print(f"  DEBUG:         Tenant ID {tenant.id}: Move-in {tenant.move_in_date}, Move-out {tenant.move_out_date}, Rent {tenant.weekly_rent}/wk")
+        # Determine tenant's active period during our calculation period
+        tenant_start = max(start_date, tenant.move_in_date)
+
+        if tenant.move_out_date:
+            tenant_end = min(end_date, tenant.move_out_date)
+        else:
+            tenant_end = end_date
+
+        # Calculate overlapping period
+        if tenant_start <= tenant_end:
+            # Calculate days active
+            days_active = (tenant_end - tenant_start).days + 1
+
+            if days_active > 0 and tenant.weekly_rent > 0:
+                # Calculate daily rent
+                daily_rent = Decimal(str(tenant.weekly_rent)) / Decimal('7')
+                income_for_period = daily_rent * days_active
+                tenant_income += income_for_period
+                print(f"  DEBUG:           -> Active {days_active} days, Income: {income_for_period}")
+        else:
+             print(f"  DEBUG:           -> No overlap with period, skipping.")
+
+    # Add transaction-based income for the actual period
+    income_transactions_queryset = Transaction.objects.filter(
+        property=property_obj,
+        date__gte=start_date,
+        date__lte=end_date,
+        transaction_type__in=['rental_income', 'additional_income', 'other_income']
+    )
+    print(f"  DEBUG:       Checking {income_transactions_queryset.count()} income transactions...")
+    for t in income_transactions_queryset:
+         print(f"  DEBUG:         Transaction ID {t.id}: {t.date}, {t.get_transaction_type_display()}, ${t.amount}")
+
+    transaction_income_result = income_transactions_queryset.aggregate(Sum('amount'))
+    transaction_income = transaction_income_result['amount__sum'] or Decimal('0.00')
+
+    total_income = tenant_income + transaction_income
+    print(f"  DEBUG:   <-- calculate_actual_income result: {total_income} (Tenant: {tenant_income} + Transaction: {transaction_income})")
+    return total_income
+
+def calculate_actual_expenses(property_obj, start_date, end_date):
+    """Calculate actual expenses incurred from start_date to end_date"""
+    from decimal import Decimal
+    print(f"  DEBUG:   --> calculate_actual_expenses for '{property_obj.address}' (ID: {property_obj.id})")
+    print(f"  DEBUG:       Period: {start_date} to {end_date}")
+    total_expenses = Decimal('0.00')
+
+    # Calculate mortgage expenses for the actual period
+    mortgage_expenses = Decimal('0.00')
+    if property_obj.property_type != 'owned_outright' and property_obj.weekly_mortgage and property_obj.weekly_mortgage > 0:
+        # Calculate days owned during our calculation period
+        property_start = max(start_date, property_obj.purchase_date)
+        property_end = end_date  # Only up to today
+        print(f"  DEBUG:       Property purchased {property_obj.purchase_date}. Relevant ownership period: {property_start} to {property_end}")
+
+        if property_start <= property_end:
+            days_owned = (property_end - property_start).days + 1
+            daily_mortgage = Decimal(str(property_obj.weekly_mortgage)) / Decimal('7')
+            mortgage_expenses = daily_mortgage * days_owned
+            print(f"  DEBUG:         -> Owned for {days_owned} days, Mortgage: {property_obj.weekly_mortgage}/wk, Expense: {mortgage_expenses}")
+        else:
+             print(f"  DEBUG:         -> No ownership overlap with period, no mortgage expense.")
+    else:
+        print(f"  DEBUG:       Property is 'owned_outright' or has no mortgage, skipping mortgage calculation.")
+
+    # Add transaction-based expenses for the actual period
+    expense_transactions_queryset = Transaction.objects.filter(
+        property=property_obj,
+        date__gte=start_date,
+        date__lte=end_date,
+        transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense']
+    )
+    print(f"  DEBUG:       Checking {expense_transactions_queryset.count()} expense transactions...")
+    for t in expense_transactions_queryset:
+         print(f"  DEBUG:         Transaction ID {t.id}: {t.date}, {t.get_transaction_type_display()}, ${t.amount}")
+
+    transaction_expenses_result = expense_transactions_queryset.aggregate(Sum('amount'))
+    transaction_expenses = transaction_expenses_result['amount__sum'] or Decimal('0.00')
+
+    total_expenses = mortgage_expenses + transaction_expenses
+    print(f"  DEBUG:   <-- calculate_actual_expenses result: {total_expenses} (Mortgage: {mortgage_expenses} + Transaction: {transaction_expenses})")
+    return total_expenses
+
+def calculate_pro_rata_depreciation(property_obj, start_date, end_date):
+    """Calculate pro-rated depreciation for the period from start_date to end_date"""
+    from decimal import Decimal
+    print(f"  DEBUG:   --> calculate_pro_rata_depreciation for '{property_obj.address}' (ID: {property_obj.id})")
+    if property_obj.property_type == 'rental' and property_obj.purchase_price:
+        # Calculate annual depreciation
+        annual_depreciation = Decimal(str(property_obj.purchase_price)) / Decimal('27.5')
+        # Calculate the number of days in our period
+        period_days = (end_date - start_date).days + 1
+        # Calculate pro-rated depreciation (365 days in a year for simplicity)
+        pro_rata_depreciation = (annual_depreciation / Decimal('365')) * Decimal(str(period_days))
+        print(f"  DEBUG:       Purchase Price: {property_obj.purchase_price}, Annual Depreciation: {annual_depreciation}, Period Days: {period_days}, Pro-rated: {pro_rata_depreciation}")
+        print(f"  DEBUG:   <-- calculate_pro_rata_depreciation result: {pro_rata_depreciation}")
+        return pro_rata_depreciation
+    print(f"  DEBUG:       Not rental property or no purchase price, returning 0.00")
+    print(f"  DEBUG:   <-- calculate_pro_rata_depreciation result: 0.00")
+    return Decimal('0.00')

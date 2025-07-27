@@ -7,18 +7,12 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+    #Login System
     # Root URL: Redirect to login if not authenticated
     path('', RedirectView.as_view(pattern_name='login'), name='index_redirect'),
-    
-    # Your actual home view (protected)
-    path('dashboard/', views.home, name='dashboard'),
-    
     # Auth URLs with enhanced security
     path('login/', views.login_view, name='login'),
-    
-     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('register/', views.register, name='register'),
 
     # Properties URLs
@@ -48,4 +42,9 @@ urlpatterns = [
     path('properties/<int:property_id>/add_tenant/', views.add_tenant, name='add_tenant'),
     path('tenants/<int:tenant_id>/edit/', views.edit_tenant, name='edit_tenant'),
     path('tenants/<int:tenant_id>/delete/', views.delete_tenant, name='delete_tenant'),
+
+    #Other
+    # Your actual home view (protected)
+    path('dashboard/', views.home, name='dashboard'),
+    path('tax-summary/', views.tax_summary, name='tax_summary'),
 ] 
