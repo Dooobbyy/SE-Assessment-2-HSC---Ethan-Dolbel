@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import date
 import calendar
+from django.contrib.auth.models import AbstractUser
 
 
 class Property(models.Model):
@@ -13,10 +14,12 @@ class Property(models.Model):
     
     address = models.CharField(max_length=200)
     purchase_date = models.DateField()
+    tenant_move_in_date = models.DateField(null=True, blank=True)
+    tenant_move_out_date = models.DateField(null=True, blank=True)
     purchase_price = models.DecimalField(max_digits=12, decimal_places=2, null=False, blank=False, help_text="Original purchase price")
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPES, default='rental')
-    monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    monthly_mortgage = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    weekly_rent = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Weekly rental amount")
+    weekly_mortgage = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Weekly mortgage payment")
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -34,34 +37,44 @@ class Property(models.Model):
     def is_owned_outright(self):
         return self.property_type == 'owned_outright'
     
-    # Calculate total income for the property
     def calculate_total_income(self):
+        from datetime import date, timedelta
+        from decimal import Decimal
         from django.db.models import Sum
         
-        total_income = 0
+        total_income = Decimal('0.00')
         
         # Debugging: Print property details
         print(f"Calculating income for {self.address}")
-        print(f"Monthly Rent: ${self.monthly_rent}")
+        print(f"Weekly Rent: ${self.weekly_rent}")
         
-        # Base rental income
-        if self.property_type in ['rental', 'owned_outright'] and self.monthly_rent > 0:
+        # Base rental income - use the property's weekly_rent field
+        if self.property_type in ['rental', 'owned_outright'] and self.weekly_rent > 0:
             today = date.today()
             purchase_date = self.purchase_date
-            months_owned = (today.year - purchase_date.year) * 12 + (today.month - purchase_date.month)
             
-            # Debugging: Print months owned
-            print(f"Months Owned: {months_owned}")
-            
-            if months_owned > 0:
-                total_income += self.monthly_rent * months_owned
-                print(f"Base Rental Income: ${total_income}")
+            # Exclude the purchase week
+            first_payday = purchase_date + timedelta(days=(4 - purchase_date.weekday()))  # First Friday after purchase
+            if first_payday <= today:
+                start_date = max(first_payday, self.tenant_move_in_date or purchase_date)
+                end_date = min(today, self.tenant_move_out_date or today)
+                
+                # Calculate number of Fridays between start and end dates
+                current_date = start_date
+                while current_date <= end_date:
+                    if current_date.weekday() == 4:  # Friday
+                        total_income += Decimal(str(self.weekly_rent))
+                        print(f"Income on {current_date}: ${self.weekly_rent}")
+                    
+                    current_date += timedelta(days=1)
         
         # Additional transactions for this property
-        property_income = Transaction.objects.filter(
+        property_income_result = Transaction.objects.filter(
             property=self,
             transaction_type__in=['rental_income', 'additional_income', 'other_income']
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        ).aggregate(Sum('amount'))['amount__sum']
+        
+        property_income = property_income_result or Decimal('0.00')
         
         # Debugging: Print additional income
         print(f"Additional Income: ${property_income}")
@@ -70,37 +83,46 @@ class Property(models.Model):
         print(f"Total Income: ${total_income}")
         
         return float(total_income)
-    
+
     # Calculate total expenses for the property
     def calculate_total_expenses(self):
         from django.db.models import Sum
+        import calendar
+        from decimal import Decimal
+        from datetime import date
         
-        total_expenses = 0
+        total_expenses = Decimal('0.00')
         
         # Debugging: Print property details
         print(f"Calculating expenses for {self.address}")
-        print(f"Mortgage: ${self.monthly_mortgage}")
+        print(f"Weekly Mortgage: ${self.weekly_mortgage}")
         print(f"Property Type: {self.property_type}")
         
         # Base mortgage expense - ONLY for properties that are NOT owned outright
         # Owned Outright properties should not have mortgage expenses
-        if self.property_type != 'owned_outright':
-            # Base mortgage expense
+        if self.property_type != 'owned_outright' and self.weekly_mortgage > 0:
             today = date.today()
             purchase_date = self.purchase_date
-            months_owned = (today.year - purchase_date.year) * 12 + (today.month - purchase_date.month)
             
-            if months_owned > 0:
-                total_expenses += self.monthly_mortgage * months_owned
-                print(f"Base Mortgage Expense: ${total_expenses}")
+            # Calculate the number of weeks owned
+            days_owned = (today - purchase_date).days
+            weeks_owned = days_owned // 7
+            
+            # Calculate expenses based on weeks owned
+            if weeks_owned > 0:
+                weekly_mortgage_decimal = Decimal(str(self.weekly_mortgage))
+                total_expenses += weekly_mortgage_decimal * weeks_owned
+                print(f"Expense for {weeks_owned} weeks: ${total_expenses:.2f}")
         else:
-            print("No mortgage expense added (owned outright)")
+            print("No mortgage expense added (owned outright or no mortgage)")
         
         # Additional expense transactions for this property
-        property_expenses = Transaction.objects.filter(
+        property_expenses_result = Transaction.objects.filter(
             property=self,
             transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense']
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        ).aggregate(Sum('amount'))['amount__sum']
+        
+        property_expenses = property_expenses_result or Decimal('0.00')
         
         # Debugging: Print additional expenses
         print(f"Additional Expenses: ${property_expenses}")
@@ -109,7 +131,7 @@ class Property(models.Model):
         print(f"Total Expenses: ${total_expenses}")
         
         return float(total_expenses)
-    
+        
     # Calculate net income for the property
     def calculate_net_income(self):
         return self.calculate_total_income() - self.calculate_total_expenses()
@@ -207,6 +229,22 @@ class Property(models.Model):
         
         return history
 
+class WeeklyRentChange(models.Model):
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    weekly_rent = models.DecimalField(max_digits=10, decimal_places=2)
+
+class WeeklyMortgageChange(models.Model):
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    weekly_mortgage = models.DecimalField(max_digits=10, decimal_places=2)
+
+class Tenant(models.Model):
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    move_in_date = models.DateField()
+    move_out_date = models.DateField(null=True, blank=True)
+    weekly_rent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
         ('rental_income', 'Rental Income'),
@@ -236,3 +274,14 @@ class Scenario(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.growth_rate}%)"
+    
+class CustomUser(AbstractUser):
+    # Add any additional fields you need for financial security
+    failed_login_attempts = models.IntegerField(default=0)
+    last_failed_login = models.DateTimeField(null=True, blank=True)
+    phone_number = models.CharField(max_length=15, blank=True)
+    
+    def reset_failed_attempts(self):
+        self.failed_login_attempts = 0
+        self.last_failed_login = None
+        self.save()

@@ -18,14 +18,14 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Scenario Management</h1>
             <!-- Use Metallic Button -->
-            <a href="{% url 'add_scenario' %}" class="btn-metallic btn-accent-metallic">Add New Scenario</a>
+            <a href="{% url 'tools_home' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
         </div>
         
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <!-- Use Metallic Button -->
-            <a href="{% url 'scenario_comparison' %}" class="btn-metallic btn-positive-metallic">Compare Scenarios</a>
+            <a href="{% url 'scenario_comparison' %}" class="btn-metallic btn-alert-metallic">Compare Scenarios</a>
             <!-- Use Metallic Button (Red) -->
-            <a href="{% url 'tools_home' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Tools</a>
+            <a href="{% url 'add_scenario' %}" class="btn-metallic btn-positive-metallic">Add New Scenario</a>
         </div>
         
         {% if scenarios %}

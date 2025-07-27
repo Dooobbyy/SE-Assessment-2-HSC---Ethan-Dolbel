@@ -1,21 +1,21 @@
-<!-- templates/registration/login.html -->
+<!-- templates/registration/register.html -->
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Login - Estate Finance Tracker{% endblock %}</title>
-
-    <!-- Viewport for PWA -->
+    <title>Register - Estate Finance Tracker</title>
+    
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
     <!-- Load CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body class="login-page">
     <div class="login-page-wrapper">
         <div class="card login-card">
-            <h2>Login</h2>
+            <h2>Register</h2>
             <form method="post">
                 {% csrf_token %}
                 
@@ -33,7 +33,7 @@
                     {{ form.username.label_tag }}
                     {{ form.username }}
                     {% if form.username.errors %}
-                        <ul class="errorlist">
+                        <ul class="errorlist" style="color: var(--color-negative);">
                             {% for error in form.username.errors %}
                                 <li>{{ error }}</li>
                             {% endfor %}
@@ -42,22 +42,34 @@
                 </div>
                 
                 <div class="form-group">
-                    {{ form.password.label_tag }}
-                    {{ form.password }}
-                    {% if form.password.errors %}
-                        <ul class="errorlist">
-                            {% for error in form.password.errors %}
+                    {{ form.password1.label_tag }}
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <ul class="errorlist" style="color: var(--color-negative);">
+                            {% for error in form.password1.errors %}
                                 <li>{{ error }}</li>
                             {% endfor %}
                         </ul>
                     {% endif %}
                 </div>
                 
-                <button type="submit" class="btn-accent">Login</button>
+                <div class="form-group">
+                    {{ form.password2.label_tag }}
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <ul class="errorlist" style="color: var(--color-negative);">
+                            {% for error in form.password2.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn-accent">Register</button>
             </form>
             
             <div style="margin-top: 20px; text-align: center;">
-                <p>Don't have an account? <a href="{% url 'register' %}" style="color: var(--color-gold);">Register here</a></p>
+                <p>Already have an account? <a href="{% url 'login' %}" style="color: var(--color-gold);">Login here</a></p>
             </div>
         </div>
     </div>

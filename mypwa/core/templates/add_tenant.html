@@ -1,0 +1,20 @@
+<!-- templates/add_tenant.html -->
+{% extends 'base.html' %}
+
+{% block title %}Add Tenant{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Add Tenant</h1>
+        
+        <form method="post" class="card">
+            {% csrf_token %}
+            {{ form.as_p }}
+            
+            <button type="submit" class="btn-metallic btn-accent-metallic">Add Tenant</button>
+            <a href="{% url 'property_detail' property_id=property.id %}" class="btn-metallic btn-negative-metallic">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -27,6 +27,25 @@
                 {% endif %}
             </div>
             
+            <!-- Tenant Move-In/Move-Out Dates -->
+            <div class="form-group">
+                <label for="{{ form.tenant_move_in_date.id_for_label }}">Tenant Move-In Date:</label>
+                {{ form.tenant_move_in_date }}
+                {% if form.tenant_move_in_date.errors %}
+                    <div class="form-error">{{ form.tenant_move_in_date.errors }}</div>
+                {% endif %}
+                <small style="color: var(--color-muted);">Date when tenants move in (optional)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.tenant_move_out_date.id_for_label }}">Tenant Move-Out Date:</label>
+                {{ form.tenant_move_out_date }}
+                {% if form.tenant_move_out_date.errors %}
+                    <div class="form-error">{{ form.tenant_move_out_date.errors }}</div>
+                {% endif %}
+                <small style="color: var(--color-muted);">Date when tenants move out (optional)</small>
+            </div>
+            
             <div class="form-group">
                 <label for="{{ form.property_type.id_for_label }}">Property Type:</label>
                 {{ form.property_type }}
@@ -36,21 +55,21 @@
             </div>
             
             <div class="form-group">
-                <label for="{{ form.monthly_rent.id_for_label }}">Monthly Rent ($):</label>
-                {{ form.monthly_rent }}
-                {% if form.monthly_rent.errors %}
-                    <div class="form-error">{{ form.monthly_rent.errors }}</div>
+                <label for="{{ form.weekly_rent.id_for_label }}">Weekly Rent ($):</label>
+                {{ form.weekly_rent }}
+                {% if form.weekly_rent.errors %}
+                    <div class="form-error">{{ form.weekly_rent.errors }}</div>
                 {% endif %}
-                <small style="color: var(--color-muted);">{{ form.monthly_rent.help_text }}</small>
+                <small style="color: var(--color-muted);">Enter the weekly rental amount</small>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.monthly_mortgage.id_for_label }}">Monthly Mortgage ($):</label>
-                {{ form.monthly_mortgage }}
-                {% if form.monthly_mortgage.errors %}
-                    <div class="form-error">{{ form.monthly_mortgage.errors }}</div>
+                <label for="{{ form.weekly_mortgage.id_for_label }}">Weekly Mortgage ($):</label>
+                {{ form.weekly_mortgage }}
+                {% if form.weekly_mortgage.errors %}
+                    <div class="form-error">{{ form.weekly_mortgage.errors }}</div>
                 {% endif %}
-                <small style="color: var(--color-muted);">{{ form.monthly_mortgage.help_text }}</small>
+                <small style="color: var(--color-muted);">Enter the weekly mortgage payment amount</small>
             </div>
             
             <div class="form-group">

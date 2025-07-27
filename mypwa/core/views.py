@@ -1,15 +1,23 @@
 # core/views.py
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import TemplateView
+from django.db import transaction
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.cache import never_cache
+from django.utils.decorators import method_decorator
+from django.views.generic import View
+from django.http import HttpResponse
 from .models import Property, Transaction, Scenario
-from .forms import PropertyForm, TransactionForm, BulkTransactionForm, ValuePredictionForm, ScenarioComparisonForm, ScenarioForm
+from .forms import PropertyForm, TransactionForm, BulkTransactionForm, ValuePredictionForm, ScenarioComparisonForm, ScenarioForm, SecureUserCreationForm, SecureAuthenticationForm, WeeklyRentChangeForm, WeeklyMortgageChangeForm, TenantForm
 from datetime import date
 from dateutil.relativedelta import relativedelta
 import calendar
-from django.db import transaction
-from django.contrib.auth.decorators import login_required
-from django.views.generic import TemplateView
-
+import logging
 
 
 TRANSACTION_TYPE_CHOICES = [
@@ -22,22 +30,103 @@ TRANSACTION_TYPE_CHOICES = [
     ('other_expense', 'Other Expense'),
 ]
 
-@login_required
-def custom_login(request):
+logger = logging.getLogger(__name__)
+
+
+@csrf_protect
+@never_cache
+def register(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('index')  # Redirect to home page after login
-        else:
-            # Return an 'invalid login' error message
-            return render(request, 'registration/login.html', {
-                'error': 'Invalid username or password'
-            })
+        form = SecureUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, 'Registration successful. Please log in.')
+            return redirect('login')
     else:
-        return render(request, 'registration/login.html')
+        form = SecureUserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+@csrf_protect
+@never_cache
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                # Change this line from 'index' to 'dashboard'
+                return redirect('dashboard')  # This matches your URL name
+            else:
+                messages.error(request, 'Invalid username or password.')
+        else:
+            messages.error(request, 'Invalid username or password.')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'registration/login.html', {'form': form})
+
+class LoginView(View):
+    template_name = 'registration/login.html'
+    
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')  # Change to your dashboard URL
+        form = SecureAuthenticationForm()
+        return render(request, self.template_name, {'form': form})
+    
+    def post(self, request):
+        form = SecureAuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            
+            # Log successful login
+            logger.info(f"Successful login for user: {user.username} from IP: {get_client_ip(request)}")
+            
+            # Redirect to next page or dashboard
+            next_page = request.GET.get('next', '/dashboard/')  # Change to your dashboard URL
+            return redirect(next_page)
+        else:
+            # Log failed login attempt
+            username = request.POST.get('username')
+            logger.warning(f"Failed login attempt for user: {username} from IP: {get_client_ip(request)}")
+            
+        return render(request, self.template_name, {'form': form})
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+@method_decorator([csrf_protect, never_cache], name='dispatch')
+class RegisterView(View):
+    template_name = 'registration/register.html'
+    
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+        form = SecureUserCreationForm()
+        return render(request, self.template_name, {'form': form})
+    
+    def post(self, request):
+        form = SecureUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, 'Registration successful. Please log in.')
+            logger.info(f"New user registered: {user.username}")
+            return redirect('login')
+        return render(request, self.template_name, {'form': form})
+
+@login_required
+def logout_view(request):
+    logout(request)
+    messages.info(request, 'You have been logged out successfully.')
+    return redirect('login')
 
 @login_required
 def home(request):
@@ -124,11 +213,28 @@ def add_property(request):
     
     return render(request, 'add_property.html', {'form': form})
 
+def add_tenant(request, property_id):
+    property_obj = get_object_or_404(Property, id=property_id)
+    
+    if request.method == 'POST':
+        form = TenantForm(request.POST)
+        if form.is_valid():
+            tenant = form.save(commit=False)
+            tenant.property = property_obj
+            tenant.save()
+            return redirect('property_detail', property_id=property_id)
+    else:
+        form = TenantForm()
+    
+    return render(request, 'add_tenant.html', {'form': form})
+
 def calculate_monthly_income(year, month):
     from django.db.models import Sum
-    from datetime import date
+    from datetime import date, timedelta
+    import calendar
+    from decimal import Decimal
     
-    total_income = 0
+    total_income = Decimal('0.00')
     
     # Get all properties
     properties = Property.objects.all()
@@ -137,25 +243,46 @@ def calculate_monthly_income(year, month):
     for property_obj in properties:
         # Check if property was owned during this month
         if property_obj.purchase_date.year < year or (property_obj.purchase_date.year == year and property_obj.purchase_date.month <= month):
-            # For rental and owned_outright properties, add monthly rent
-            if property_obj.property_type in ['rental', 'owned_outright'] and property_obj.monthly_rent > 0:
-                total_income += float(property_obj.monthly_rent)
+            # For rental and owned_outright properties, add weekly rent converted to monthly
+            if property_obj.property_type in ['rental', 'owned_outright'] and property_obj.weekly_rent > 0:
+                # Calculate accurate monthly rent based on days in the month
+                days_in_month = calendar.monthrange(year, month)[1]
+                start_date = date(year, month, 1)
+                end_date = date(year, month, days_in_month)
+                
+                # Exclude the purchase week
+                first_payday = property_obj.purchase_date + timedelta(days=(4 - property_obj.purchase_date.weekday()))
+                if first_payday <= end_date:
+                    start_date = max(first_payday, property_obj.tenant_move_in_date or start_date)
+                    end_date = min(end_date, property_obj.tenant_move_out_date or end_date)
+                    
+                    # Count Fridays in the month
+                    current_date = start_date
+                    while current_date <= end_date:
+                        if current_date.weekday() == 4:  # Friday
+                            total_income += Decimal(str(property_obj.weekly_rent))
+                        
+                        current_date += timedelta(days=1)
     
     # Add transaction-based income for this specific month
-    month_income = Transaction.objects.filter(
+    month_income_result = Transaction.objects.filter(
         date__year=year,
         date__month=month,
         transaction_type__in=['rental_income', 'additional_income', 'other_income']
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    ).aggregate(Sum('amount'))['amount__sum']
     
-    total_income += float(month_income)
-    return total_income
+    month_income = month_income_result or Decimal('0.00')
+    
+    total_income += month_income
+    return float(total_income)
 
 def calculate_monthly_expenses(year, month):
     from django.db.models import Sum
     from datetime import date
+    import calendar
+    from decimal import Decimal
     
-    total_expenses = 0
+    total_expenses = Decimal('0.00')
     
     # Get all properties
     properties = Property.objects.all()
@@ -165,19 +292,56 @@ def calculate_monthly_expenses(year, month):
     for property_obj in properties:
         # Check if property was owned during this month
         if property_obj.purchase_date.year < year or (property_obj.purchase_date.year == year and property_obj.purchase_date.month <= month):
-            # Add monthly mortgage for properties that are NOT owned_outright
-            if property_obj.property_type != 'owned_outright' and property_obj.monthly_mortgage > 0:
-                total_expenses += float(property_obj.monthly_mortgage)
+            # Add weekly mortgage converted to monthly for properties that are NOT owned_outright
+            if property_obj.property_type != 'owned_outright' and property_obj.weekly_mortgage > 0:
+                # Calculate accurate monthly mortgage based on days in the month
+                days_in_month = calendar.monthrange(year, month)[1]
+                weekly_mortgage_decimal = Decimal(str(property_obj.weekly_mortgage))
+                days_in_month_decimal = Decimal(str(days_in_month))
+                monthly_mortgage = weekly_mortgage_decimal * (days_in_month_decimal / Decimal('7'))
+                total_expenses += monthly_mortgage
     
     # Add transaction-based expenses for this specific month
-    month_expenses = Transaction.objects.filter(
+    month_expenses_result = Transaction.objects.filter(
         date__year=year,
         date__month=month,
         transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense']
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    ).aggregate(Sum('amount'))['amount__sum']
     
-    total_expenses += float(month_expenses)
-    return total_expenses
+    month_expenses = month_expenses_result or Decimal('0.00')
+    
+    total_expenses += month_expenses
+    return float(total_expenses)
+
+def add_weekly_rent_change(request, property_id):
+    property_obj = get_object_or_404(Property, id=property_id)
+    
+    if request.method == 'POST':
+        form = WeeklyRentChangeForm(request.POST)
+        if form.is_valid():
+            change = form.save(commit=False)
+            change.property = property_obj
+            change.save()
+            return redirect('property_detail', property_id=property_id)
+    else:
+        form = WeeklyRentChangeForm()
+    
+    return render(request, 'add_weekly_rent_change.html', {'form': form})
+
+def add_weekly_mortgage_change(request, property_id):
+    property_obj = get_object_or_404(Property, id=property_id)
+    
+    if request.method == 'POST':
+        form = WeeklyMortgageChangeForm(request.POST)
+        if form.is_valid():
+            change = form.save(commit=False)
+            change.property = property_obj
+            change.save()
+            return redirect('property_detail', property_id=property_id)
+    else:
+        form = WeeklyMortgageChangeForm()
+    
+    return render(request, 'add_weekly_mortgage_change.html', {'form': form})
 
 @login_required
 def add_transaction(request):
@@ -186,7 +350,7 @@ def add_transaction(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Transaction added successfully!')
-            return redirect('properties')
+            return redirect('properties')  # Changed from 'transaction_log' to 'properties'
     else:
         form = TransactionForm()
         # Pre-select property if provided in URL

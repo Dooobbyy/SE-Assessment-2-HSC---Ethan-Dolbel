@@ -58,8 +58,8 @@
                             </td>
                             <td>{{ prop_data.property.get_property_type_display }}</td>
                             <td>{{ prop_data.property.purchase_date|date:"M d, Y" }}</td>
-                            <td>${{ prop_data.property.monthly_rent }}</td>
-                            <td>${{ prop_data.property.monthly_mortgage }}</td>
+                            <td>${{ prop_data.property.weekly_rent }}</td>
+                            <td>${{ prop_data.property.weekly_mortgage }}</td>
                             <td style="color: var(--color-positive);">${{ prop_data.total_income|floatformat:2 }}</td>
                             <td style="color: var(--color-negative);">${{ prop_data.total_expenses|floatformat:2 }}</td>
                             <td style="color: {% if prop_data.net_income >= 0 %}var(--color-positive){% else %}var(--color-negative){% endif %}">

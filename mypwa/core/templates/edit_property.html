@@ -47,21 +47,21 @@
             </div>
             
             <div class="form-group">
-                <label for="{{ form.monthly_rent.id_for_label }}">Monthly Rent ($):</label>
-                {{ form.monthly_rent }}
-                {% if form.monthly_rent.errors %}
-                    <div class="form-error" style="color: var(--color-negative);">{{ form.monthly_rent.errors }}</div>
+                <label for="{{ form.weekly_rent.id_for_label }}">Weekly Rent ($):</label>
+                {{ form.weekly_rent }}
+                {% if form.weekly_rent.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.weekly_rent.errors }}</div>
                 {% endif %}
-                <small style="color: var(--color-muted);">{{ form.monthly_rent.help_text }}</small>
+                <small style="color: var(--color-muted);">{{ form.weekly_rent.help_text }}</small>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.monthly_mortgage.id_for_label }}">Monthly Mortgage ($):</label>
-                {{ form.monthly_mortgage }}
-                {% if form.monthly_mortgage.errors %}
-                    <div class="form-error" style="color: var(--color-negative);">{{ form.monthly_mortgage.errors }}</div>
+                <label for="{{ form.weekly_mortgage.id_for_label }}">Weekly Mortgage ($):</label>
+                {{ form.weekly_mortgage }}
+                {% if form.weekly_mortgage.errors %}
+                    <div class="form-error" style="color: var(--color-negative);">{{ form.weekly_mortgage.errors }}</div>
                 {% endif %}
-                <small style="color: var(--color-muted);">{{ form.monthly_mortgage.help_text }}</small>
+                <small style="color: var(--color-muted);">{{ form.weekly_mortgage.help_text }}</small>
             </div>
             
             <div class="form-group">
@@ -77,7 +77,7 @@
                 <!-- Use Metallic Button -->
                 <button type="submit" class="btn-metallic btn-accent-metallic">Update Property</button>
                 <!-- Use Metallic Button -->
-                <button type="button" class="btn-metallic btn-alert-metallic" onclick="confirmDelete()">Delete Property</button>
+                <button type="button" class="btn-metallic btn-secondary-metallic" onclick="confirmDelete()">Delete Property</button>
                 <!-- Use Metallic Button (Red) -->
                 <a href="{% url 'properties' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Cancel</a>
             </div>

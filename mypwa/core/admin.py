@@ -4,7 +4,7 @@ from .models import Property, Transaction
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('address', 'purchase_date', 'monthly_rent', 'created_at')
+    list_display = ('address', 'purchase_date', 'weekly_rent', 'created_at')
     list_filter = ('purchase_date',)
     search_fields = ('address',)
     ordering = ('-purchase_date',)

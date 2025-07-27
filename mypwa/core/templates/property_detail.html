@@ -9,8 +9,6 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>{{ property.address }}</h1>
             <div style="display: flex; gap: 10px;">
-                <!-- Use Metallic Button -->
-                <a href="{% url 'add_transaction' %}?property={{ property.id }}" class="btn-metallic btn-accent-metallic">Add Transaction</a>
                 <!-- Use Metallic Button (Red) -->
                 <a href="{% url 'properties' %}" class="btn-metallic btn-negative-metallic" style="text-decoration: none; padding: 10px 16px; border-radius: 6px;">Back to Properties</a>
             </div>
@@ -54,7 +52,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3>Transactions</h3>
                 <!-- Use Metallic Button -->
-                <a href="{% url 'add_transaction' %}?property={{ property.id }}" class="btn-metallic btn-accent-metallic">Add Transaction</a>
+                <a href="{% url 'add_transaction' %}?property={{ property.id }}" class="btn-metallic btn-positive-metallic">Add Transaction</a>
             </div>
             
             {% if transactions %}

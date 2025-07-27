@@ -1,0 +1,20 @@
+<!-- templates/add_weekly_rent_change.html -->
+{% extends 'base.html' %}
+
+{% block title %}Add Weekly Rent Change{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Add Weekly Rent Change</h1>
+        
+        <form method="post" class="card">
+            {% csrf_token %}
+            {{ form.as_p }}
+            
+            <button type="submit" class="btn-metallic btn-accent-metallic">Save Change</button>
+            <a href="{% url 'property_detail' property_id=property.id %}" class="btn-metallic btn-negative-metallic">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

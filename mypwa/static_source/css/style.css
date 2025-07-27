@@ -410,9 +410,9 @@ h1 {
   width: 200%;
   height: 200%;
   /* Subtle square highlight */
-  background: linear-gradient(
-    135deg, /* Diagonal angle */
-    rgba(255, 255, 255, 0.2) 0%,  /* Less bright white */
+  background: linear-gradient( 
+    135deg,                       /* Diagonal angle */
+  rgba(255, 255, 255, 0.2) 0%,  /* Less bright white */
     transparent 50%               /* Fade to transparent */
   );
   opacity: 0; /* Initially hidden */
@@ -424,7 +424,6 @@ h1 {
 
 /* Hover State */
 .btn-metallic:hover {
-  color: white; /* Text turns white on hover */
   transform: translateY(2px); /* Move down slightly on hover */
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2); /* Reduce shadow on hover for pressed effect */
 }
@@ -436,7 +435,6 @@ h1 {
 
 /* Active/Pressed State */
 .btn-metallic:active {
-  color: white; /* Keep text white when actively pressed */
   transform: translateY(4px); /* Move down more when actively pressed */
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.2); /* Remove shadow when pressed */
 }
@@ -449,17 +447,18 @@ h1 {
   --button-metallic-bg: linear-gradient(to bottom right, var(--color-positive), var(--color-positive-dark));
 }
 .btn-alert-metallic {
-  --button-metallic-bg: linear-gradient(to bottom right, var(--color-alert), var(--color-alert-dark));
+ --button-metallic-bg: linear-gradient(to bottom right, #01ca87, #039665); /* Darker green shades */
+    color: black; 
 }
 .btn-secondary-metallic {
-  --button-metallic-bg: linear-gradient(to bottom right, var(--color-card-bg), var(--color-card-bg-dark));
+  --button-metallic-bg: linear-gradient(to bottom right, #ffffff, #e0e0e0); /* White to light gray */
   /* Secondary buttons might need different default text color */
-  color: var(--color-card-text); /* Use card text color by default */
+  color: black; /* Use card text color by default */
 }
 /* Ensure secondary button text also turns white on hover/active if it started with card-text color */
 .btn-secondary-metallic:hover,
 .btn-secondary-metallic:active {
-  color: white;
+  color: black;
 }
 
 .btn-negative-metallic {
@@ -471,7 +470,7 @@ h1 {
 /* Ensure red button text stays white on hover/active */
 .btn-negative-metallic:hover,
 .btn-negative-metallic:active {
-  color: white; /* Explicitly keep text white */
+  color: black; /* Explicitly keep text white */
 }
 /* === Sidebar === */
 .sidebar {

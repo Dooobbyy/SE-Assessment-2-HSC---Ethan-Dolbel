@@ -1,21 +1,25 @@
 # core/urls.py
 from django.urls import path
+from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from . import views
 
 urlpatterns = [
-    # Root URL: Redirect to login if not authenticated, otherwise to home view
+    path('admin/', admin.site.urls),
+    
+    # Root URL: Redirect to login if not authenticated
     path('', RedirectView.as_view(pattern_name='login'), name='index_redirect'),
+    
     # Your actual home view (protected)
-    path('dashboard/', views.home, name='index'),
-
-    # Auth URLs
-    path('login/', auth_views.LoginView.as_view(
-        template_name='registration/login.html',
-        redirect_authenticated_user=True  # Redirects logged-in users away from login page
-    ), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('dashboard/', views.home, name='dashboard'),
+    
+    # Auth URLs with enhanced security
+    path('login/', views.login_view, name='login'),
+    
+     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    
+    path('register/', views.register, name='register'),
 
     # Properties URLs
     path('properties/', views.properties, name='properties'),
