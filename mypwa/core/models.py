@@ -4,7 +4,8 @@ from datetime import date
 import calendar
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Sum
-
+import string
+import secrets
 
 class Property(models.Model):
     PROPERTY_TYPES = [
@@ -264,12 +265,51 @@ class Scenario(models.Model):
         return f"{self.name} ({self.growth_rate}%)"
     
 class CustomUser(AbstractUser):
-    # Add any additional fields you need for financial security
+    # Add first_name and last_name explicitly if you want more control,
+    # though AbstractUser already includes them. Ensure they are required in forms if needed.
+    # first_name = models.CharField(max_length=150, blank=True) # Already in AbstractUser
+    # last_name = models.CharField(max_length=150, blank=True)  # Already in AbstractUser
+    
+    # Your existing custom fields
     failed_login_attempts = models.IntegerField(default=0)
     last_failed_login = models.DateTimeField(null=True, blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
-    
+
+    # Email Verification Fields
+    is_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=100, blank=True, null=True)
+
+    # Password Reset Fields
+    reset_token = models.CharField(max_length=100, blank=True, null=True)
+    reset_token_expires_at = models.DateTimeField(blank=True, null=True)
+
     def reset_failed_attempts(self):
         self.failed_login_attempts = 0
         self.last_failed_login = None
         self.save()
+
+    def generate_verification_token(self):
+        """Generates a secure random token for email verification."""
+        self.verification_token = secrets.token_urlsafe(32)
+        self.save(update_fields=['verification_token'])
+
+    def generate_reset_token(self, expiry_minutes=60):
+        """Generates a secure random token for password reset with expiry."""
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expires_at = timezone.now() + timezone.timedelta(minutes=expiry_minutes)
+        self.save(update_fields=['reset_token', 'reset_token_expires_at'])
+
+    def is_reset_token_valid(self):
+        """Checks if the reset token is present and not expired."""
+        if not self.reset_token or not self.reset_token_expires_at:
+            return False
+        return timezone.now() < self.reset_token_expires_at
+
+    def __str__(self):
+        return self.username
+
+    class Meta(AbstractUser.Meta): # Inherit meta from AbstractUser
+        # Ensure email addresses are unique across the entire user base
+        constraints = [
+            models.UniqueConstraint(fields=['email'], name='unique_email_constraint')
+        ]

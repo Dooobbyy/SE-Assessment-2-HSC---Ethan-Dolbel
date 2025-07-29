@@ -177,14 +177,16 @@ class ScenarioComparisonForm(forms.Form):
     )
 
 class SecureUserCreationForm(UserCreationForm):
+    # Remove first_name and last_name fields
     email = forms.EmailField(required=True)
-    first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
-    
+    # first_name = forms.CharField(max_length=30, required=True) # Removed
+    # last_name = forms.CharField(max_length=30, required=True)  # Removed
+
     class Meta:
         model = CustomUser
-        fields = ("username", "first_name", "last_name", "email", "password1", "password2")
-    
+        # Remove first_name and last_name from fields
+        fields = ("username", "email", "password1", "password2") # Updated fields list
+
     def clean_username(self):
         username = self.cleaned_data.get('username')
         if len(username) < 4:
@@ -192,7 +194,15 @@ class SecureUserCreationForm(UserCreationForm):
         if not re.match("^[a-zA-Z0-9_]+$", username):
             raise forms.ValidationError("Username can only contain letters, numbers, and underscores.")
         return username
-    
+
+    def clean_email(self):
+        """Validates that the email address is unique."""
+        email = self.cleaned_data.get('email')
+        # Check if email is already taken (case-insensitive)
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email already exists.")
+        return email
+
     def clean_password1(self):
         password = self.cleaned_data.get('password1')
         if len(password) < 12:
@@ -206,12 +216,15 @@ class SecureUserCreationForm(UserCreationForm):
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
             raise forms.ValidationError("Password must contain at least one special character.")
         return password
-    
+
+    # Update the save method to remove first_name and last_name assignment
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
-        user.first_name = self.cleaned_data["first_name"]
-        user.last_name = self.cleaned_data["last_name"]
+        # Remove assignments for first_name and last_name
+        # user.first_name = self.cleaned_data["first_name"]
+        # user.last_name = self.cleaned_data["last_name"]
+        # is_verified is False by default due to model definition
         if commit:
             user.save()
         return user

@@ -5,20 +5,49 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Login - Estate Finance Tracker{% endblock %}</title>
-
-    <!-- Viewport for PWA -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Load CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- Optional: Add basic styling for messages if not in your main CSS -->
+    <style>
+        /* Style for Django messages */
+        .messages {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 0 15px 0; /* Add some bottom margin */
+        }
+        .messages li {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        /* Different styles for different message tags (Bootstrap-like) */
+        .messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .messages .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
 </head>
 <body class="login-page">
     <div class="login-page-wrapper">
         <div class="card login-card">
             <h2>Login</h2>
+
+            <!-- *** Display Django Messages *** -->
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <!-- Use the message's 'tags' to apply different styles -->
+                        <li class="{{ message.tags }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            <!-- ******************************** -->
+
             <form method="post">
                 {% csrf_token %}
                 
+                <!-- Display non-field errors if messages aren't used for them -->
                 {% if form.non_field_errors %}
                     <div class="error-message">
                         <ul class="errorlist">
@@ -51,6 +80,10 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
+                </div>
+                
+                <div style="text-align: right; margin-top: 5px; margin-bottom: 10px;">
+                    <a href="{% url 'forgot_password' %}" style="font-size: 0.9em; color: #6c757d;">Forgot Password?</a>
                 </div>
                 
                 <button type="submit" class="btn-accent">Login</button>
