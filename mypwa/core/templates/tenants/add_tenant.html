@@ -1,3 +1,4 @@
+<!-- templates/add_tenant.html -->
 {% extends 'base.html' %}
 
 {% block title %}Add Tenant - Real Estate Finance Tracker{% endblock %}
@@ -10,12 +11,17 @@
         <form method="post" class="card">
             {% csrf_token %}
             
-            <!-- Existing fields -->
-            {{ form.as_p }}
+            <!-- Add spacing between form fields -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Existing fields -->
+                {{ form.as_p }}
+            </div>
             
-            <!-- Submit Button -->
-            <button type="submit" class="btn-metallic btn-accent-metallic">Add Tenant</button>
-            <a href="{% url 'property_detail' property.id %}" class="btn-metallic btn-negative-metallic">Cancel</a>
+            <!-- Aligned Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <button type="submit" class="btn-metallic btn-accent-metallic">Add Tenant</button>
+                <a href="{% url 'property_detail' property.id %}" class="btn-metallic btn-negative-metallic" style="display: inline-block; text-decoration: none; padding: 10px 20px;">Cancel</a>
+            </div>
         </form>
     </div>
 </div>

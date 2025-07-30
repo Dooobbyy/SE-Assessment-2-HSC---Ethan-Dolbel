@@ -54,11 +54,6 @@ class WeeklyMortgageChangeForm(forms.ModelForm):
         }
 
 class TenantForm(forms.ModelForm):
-    previous_tenant_end_date = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={'type': 'date'}),
-        help_text="End date for the previous tenant (if applicable)"
-    )
     
     class Meta:
         model = Tenant

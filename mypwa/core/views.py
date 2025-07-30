@@ -431,7 +431,7 @@ def calculate_monthly_income(year, month, user):
             if property_obj.property_type in ['rental', 'owned_outright']:
                 
                 # Iterate through all tenants for this property
-                for tenant in property_obj.tenant_set.all():
+                for tenant in property_obj.tenants.all():
                     # --- Check if the tenant was active during (part of) this calculation period ---
                     
                     # Tenant's rental period starts on move_in_date
@@ -565,7 +565,7 @@ def add_tenant(request, property_id):
         form = TenantForm(request.POST)
         if form.is_valid():
             # Get the latest tenant for this property who doesn't have a move_out_date
-            latest_tenant = property_obj.tenant_set.filter(move_out_date__isnull=True).order_by('-move_in_date').first()
+            latest_tenant = property_obj.tenants.filter(move_out_date__isnull=True).order_by('-move_in_date').first()
             
             # If there's a previous tenant, set their move_out_date to one day before new tenant's move_in_date
             if latest_tenant:
@@ -694,6 +694,12 @@ def property_detail(request, property_id):
         'total_expenses': total_expenses,
         'net_income': net_income,
     }
+
+    try:
+        total_income = property_obj.calculate_total_income()
+    except Exception as e:
+        print(f"Error calculating total income: {e}")
+        total_income = 0
     
     return render(request, 'property/property_detail.html', context)
 
@@ -1101,8 +1107,8 @@ def calculate_actual_income(property_obj, start_date, end_date):
 
     # Calculate tenant income for the actual period
     tenant_income = Decimal('0.00')
-    print(f"  DEBUG:       Checking {property_obj.tenant_set.count()} tenants...")
-    for tenant in property_obj.tenant_set.all():
+    print(f"  DEBUG:       Checking {property_obj.tenants.count()} tenants...")
+    for tenant in property_obj.tenants.all():
         print(f"  DEBUG:         Tenant ID {tenant.id}: Move-in {tenant.move_in_date}, Move-out {tenant.move_out_date}, Rent {tenant.weekly_rent}/wk")
         # Determine tenant's active period during our calculation period
         tenant_start = max(start_date, tenant.move_in_date)

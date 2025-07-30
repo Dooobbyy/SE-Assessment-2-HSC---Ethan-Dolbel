@@ -7,6 +7,8 @@ from django.db.models import Sum
 import string
 import secrets
 from django.conf import settings
+import uuid
+from decimal import Decimal
 
 class CustomUser(AbstractUser):
     # Add first_name and last_name explicitly if you want more control,
@@ -96,9 +98,6 @@ class Property(models.Model):
         return self.property_type == 'owned_outright'
         
     def calculate_total_income(self):
-        from datetime import date
-        from decimal import Decimal
-        from django.db.models import Sum
         
         total_income = Decimal('0.00')
         
@@ -108,7 +107,8 @@ class Property(models.Model):
         
         # Base rental income from tenants
         today = date.today()
-        for tenant in self.tenant_set.all():
+        # FIX: Use 'tenants' instead of 'tenant_set' due to related_name
+        for tenant in self.tenants.all():
             # Check if tenant was active during the period
             if tenant.move_in_date <= today:
                 days_owned = (today - tenant.move_in_date).days
@@ -285,7 +285,8 @@ class WeeklyMortgageChange(models.Model):
     weekly_mortgage = models.DecimalField(max_digits=10, decimal_places=2)
 
 class Tenant(models.Model):
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='tenants')
     move_in_date = models.DateField()
     move_out_date = models.DateField(null=True, blank=True)
     weekly_rent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
