@@ -1,11 +1,14 @@
 # core/forms.py
 from django import forms
-from .models import Property, Transaction, Scenario, CustomUser
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from .models import Property, Transaction, Scenario, CustomUser, Alert
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth import authenticate
 from .models import CustomUser, WeeklyRentChange, WeeklyMortgageChange, Tenant
 import re
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class PropertyForm(forms.ModelForm):
     class Meta:
@@ -273,3 +276,68 @@ class SecureAuthenticationForm(AuthenticationForm):
                 # Reset failed attempts on successful login
                 self.user_cache.reset_failed_attempts()
         return self.cleaned_data
+    
+class UserSettingsForm(forms.ModelForm):
+    """
+    Form for users to update their username and email.
+    Does not include password fields.
+    """
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email')
+        # You can add widgets here to customize the input fields if needed
+        # widgets = {
+        #     'username': forms.TextInput(attrs={'class': 'form-control'}),
+        #     'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        # }
+
+    def __init__(self, *args, **kwargs):
+        # Get the user instance to validate against
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        # Check if the username is being changed and if the new username is already taken
+        if username != self.user.username: # Check if it's actually changing
+            if CustomUser.objects.filter(username__iexact=username).exists():
+                raise forms.ValidationError("A user with that username already exists.")
+        # Add your existing username validation rules if needed
+        # ... (e.g., length, allowed characters)
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        # Check if the email is being changed and if the new email is already taken
+        if email != self.user.email: # Check if it's actually changing
+            if CustomUser.objects.filter(email__iexact=email).exists():
+                raise forms.ValidationError("An account with this email address already exists.")
+        # The unique constraint on the model will also prevent this, but this gives a friendlier error
+        return email
+
+class EmailChangeForm(forms.Form):
+    """
+    Form for requesting an email change. Triggers verification.
+    """
+    new_email = forms.EmailField(max_length=254)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_new_email(self):
+        new_email = self.cleaned_data['new_email']
+        if new_email != self.user.email: # Check if it's actually changing
+            if CustomUser.objects.filter(email__iexact=new_email).exists():
+                raise forms.ValidationError("An account with this email address already exists.")
+        else:
+             raise forms.ValidationError("This is your current email address.")
+        return new_email
+    
+class AlertForm(forms.ModelForm):
+    class Meta:
+        model = Alert
+        fields = ['type', 'message']
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 3}), # Make the message area a bit larger
+        }

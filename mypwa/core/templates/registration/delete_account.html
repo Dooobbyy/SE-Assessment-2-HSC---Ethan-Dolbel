@@ -1,0 +1,44 @@
+<!-- templates/registration/delete_account.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Account{% endblock %}
+
+{% block content %}
+<div class="login-page-wrapper">
+    <div class="card login-card">
+        <h2>Delete Your Account</h2>
+        <p style="color: #dc3545;"> <!-- Using inline style for red color since it's a warning -->
+            <strong>Warning:</strong> This action is permanent and cannot be undone.
+            All your data (properties, transactions, tenants, scenarios, etc.) will be permanently deleted.
+        </p>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="password">Enter your current password to confirm:</label>
+                <input type="password" name="password" id="password" class="form-control" required>
+                <small style="color: var(--color-muted);">This is required to confirm the deletion of your account.</small>
+            </div>
+
+            <!-- Use Metallic Button (Red) -->
+            <button type="submit" class="btn-metallic btn-negative-metallic" 
+                    onclick="return confirm('Are you absolutely sure you want to delete your account? This cannot be undone.')" style="display: inline-block; padding: 10px 20px;">
+                Permanently Delete Account
+            </button>
+            
+            <!-- Use Metallic Button -->
+            <a href="{% url 'user_settings' %}" class="btn-metallic btn-negative-metallic" style="display: inline-block; text-decoration: none; padding: 10px 20px; margin-left: 10px;">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

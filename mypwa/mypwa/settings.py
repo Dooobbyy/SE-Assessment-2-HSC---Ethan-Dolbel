@@ -196,3 +196,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='') # e.g., 'your-app-email@gmail.com'
 EMAIL_HOST_PASSWORD = config('EMAIL_PASSWORD', default='') # Your Gmail App Password
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+
+AXES_FAILURE_LIMIT = 5  # Example: Change the number of attempts before lockout
+AXES_COOLOFF_TIME = 1
+

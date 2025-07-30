@@ -1,0 +1,73 @@
+<!-- templates/alerts/alert_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Alerts{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="properties-page"> <!-- Reuse properties-page class for consistency -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Your Alerts & Reminders</h1>
+        </div>
+
+        <!-- Notification Bar (for success messages from views.py) -->
+        {% if messages %}
+             <div style="padding: 10px; margin: 10px 0; border-radius: 4px;">
+                 {% for message in messages %}
+                     <div class="alert" style="background-color: {% if message.tags == 'success' %}var(--color-positive){% elif message.tags == 'error' %}var(--color-negative){% else %}var(--color-alert){% endif %}; color: white; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+                         {{ message }}
+                     </div>
+                 {% endfor %}
+             </div>
+        {% endif %}
+
+        <!-- Create New Alert Form -->
+        <div class="card">
+            <h3>Create New Alert/Reminder</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ form.type.id_for_label }}">Type:</label>
+                    {{ form.type }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.message.id_for_label }}">Message:</label>
+                    {{ form.message }}
+                    {% if form.message.errors %}
+                        <div class="form-error">{{ form.message.errors }}</div>
+                    {% endif %}
+                    <small style="color: var(--color-muted);">Enter your custom message (e.g., "Review property taxes for Downtown Apt", "Meeting with tenant tomorrow").</small>
+                </div>
+                <button type="submit" class="btn-metallic btn-accent-metallic">Add Alert/Reminder</button>
+            </form>
+        </div>
+
+        <!-- List Existing Alerts -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>Current Alerts & Reminders</h3>
+             {% if alerts %}
+                <div class="alerts"> <!-- Use the existing .alerts container styling -->
+                    <ul>
+                        {% for alert in alerts %}
+                            <li>
+                                <strong>{{ alert.get_type_display }}:</strong> {{ alert.message }}
+                                <form method="post" action="{% url 'alert_delete' alert.id %}" style="display: inline; margin-left: 10px;" onsubmit="return confirm('Are you sure you want to delete this alert?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-metallic btn-secondary-metallic" style="padding: 2px 8px; font-size: 0.8em;">Delete</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <p style="color: var(--color-muted);">You have no alerts or reminders set.</p>
+            {% endif %}
+        </div>
+
+         <div style="margin-top: 20px;">
+             <a href="{% url 'dashboard' %}" class="btn-metallic btn-negative-metallic">Back to Dashboard</a>
+         </div>
+    </div>
+</div>
+{% endblock %}

@@ -25,7 +25,8 @@
         <li><a href="{% url 'properties' %}"><img src="{% static 'images/009-house-with-money-symbol.png' %}" alt="Properties icon" width="20" height="20"> Properties</a></li>
         <li><a href="{% url 'tax_summary' %}"><img src="{% static 'images/004-sheet.png' %}" alt="Reports icon" width="20" height="20"> Reports</a></li>
         <li><a href="{% url 'tools_home' %}"><img src="{% static 'images/008-wrench-simple.png' %}" alt="Tools icon" width="20" height="20"> Tools</a></li>
-        <li><a href="{% url 'dashboard' %}"><img src="{% static 'images/005-setting.png' %}" alt="Settings icon" width="20" height="20"> Settings</a></li>
+        <li><a href="{% url 'user_settings' %}"><img src="{% static 'images/005-setting.png' %}" alt="Settings icon" width="20" height="20"> Settings</a></li>
+        <li><a href="{% url 'alert_list' %}"><img src="{% static 'images/0010-danger.png' %}" alt="Alerts icon" width="20" height="20"> Alerts & Reminders</a></li>
         <!-- Authentication links -->
           {% if user.is_authenticated %}
               <a href="{% url 'logout' %}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><img src="{% static 'images/001-user.png' %}" alt="Logout icon" width="20" height="20">Logout</a>
@@ -58,7 +59,8 @@
           <a href="https://www.flaticon.com/authors/laura-reen" title="Laura Reen">Laura Reen</a>,
           <a href="https://www.flaticon.com/authors/dokodemo" title="dokodemo">dokodemo</a>,
           <a href="https://www.flaticon.com/authors/meaicon" title="meaicon">meaicon</a>,
-          <a href="https://www.flaticon.com/authors/altop7" title="ALTOP7">ALTOP7</a> 
+          <a href="https://www.flaticon.com/authors/altop7" title="ALTOP7">ALTOP7</a>,
+          <a href="https://www.flaticon.com/free-icons/report" title="report icons">Freepik - Flaticon</a>
           from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
       </div>
   </footer>

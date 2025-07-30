@@ -33,7 +33,6 @@
                             <th>Property Address</th>
                             <th>Type</th>
                             <th>Purchase Date</th>
-                            <th>Weekly Rent</th>
                             <th>Weekly Mortgage</th>
                             <th>Total Income</th>
                             <th>Total Expenses</th>
@@ -45,20 +44,12 @@
                         <tr>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <a href="{% url 'property_detail' prop_data.property.id %}" 
-                                    style="color: var(--color-gold); text-decoration: none;">
-                                        {{ prop_data.property.address }}
-                                    </a>
-                                    <a href="{% url 'edit_property' prop_data.property.id %}" 
-                                    style="color: var(--color-gold); text-decoration: none; font-size: 1.2em;" 
-                                    title="Edit Property">
-                                        ✏️
-                                    </a>
+                                    <a href="{% url 'property_detail' prop_data.property.id %}" class="btn-metallic btn-negative-metallic" style="background: none; border: none; color: var(--color-gold); cursor: pointer; font-size: 1.2em; padding: 5px 10px;" title="View Property">{{ prop_data.property.address }}</a>
+                                    <a href="{% url 'edit_property' prop_data.property.id %}" class="btn-metallic btn-negative-metallic" style="background: none; border: none; color: var(--color-gold); cursor: pointer; font-size: 1.2em; padding: 5px 10px;" title="Edit Property">✏️</a>
                                 </div>
                             </td>
                             <td>{{ prop_data.property.get_property_type_display }}</td>
                             <td>{{ prop_data.property.purchase_date|date:"M d, Y" }}</td>
-                            <td>${{ prop_data.property.weekly_rent }}</td>
                             <td>${{ prop_data.property.weekly_mortgage }}</td>
                             <td style="color: var(--color-positive);">${{ prop_data.total_income|floatformat:2 }}</td>
                             <td style="color: var(--color-negative);">${{ prop_data.total_expenses|floatformat:2 }}</td>

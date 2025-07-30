@@ -6,8 +6,9 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, logout, authenticate, get_user_model
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, SetPasswordForm
+from django.contrib.auth import login, logout, authenticate, get_user_model, update_session_auth_hash
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, SetPasswordForm, PasswordChangeForm
+from django.contrib.auth.views import PasswordChangeView
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.models import User
 from django.contrib.auth.backends import ModelBackend
@@ -15,10 +16,11 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.views.generic import View
+from django.core.mail import send_mail
 from django.http import HttpResponse, HttpResponseRedirect
-from .utils import send_verification_email, send_password_reset_email
-from .models import Property, Transaction, Scenario, Tenant, WeeklyMortgageChange, WeeklyRentChange
-from .forms import PropertyForm, TransactionForm, BulkTransactionForm, ValuePredictionForm, ScenarioComparisonForm, ScenarioForm, SecureUserCreationForm, SecureAuthenticationForm, WeeklyRentChangeForm, WeeklyMortgageChangeForm, TenantForm
+from .utils import send_verification_email, send_password_reset_email, send_settings_change_verification_email, confirm_email_change_token
+from .models import Property, Transaction, Scenario, Tenant, WeeklyMortgageChange, WeeklyRentChange, Alert
+from .forms import PropertyForm, TransactionForm, BulkTransactionForm, ValuePredictionForm, ScenarioComparisonForm, ScenarioForm, SecureUserCreationForm, SecureAuthenticationForm, WeeklyRentChangeForm, WeeklyMortgageChangeForm, TenantForm, UserSettingsForm, EmailChangeForm, AlertForm
 from datetime import date, timedelta, timezone
 from dateutil.relativedelta import relativedelta
 from django.utils.http import urlsafe_base64_decode
@@ -26,6 +28,7 @@ from django.db.models import Sum, Q
 from decimal import Decimal
 import calendar
 import logging
+
 
 TRANSACTION_TYPE_CHOICES = [
     ('rental_income', 'Rental Income'),
@@ -80,7 +83,6 @@ def register(request):
         form = SecureUserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
 
-# --- Updated Login View ---
 @csrf_protect
 @never_cache
 def login_view(request):
@@ -311,10 +313,15 @@ def logout_view(request):
 @login_required
 def home(request):
     print(f"User is authenticated: {request.user.is_authenticated}")  # Debug statement
+    
+    # --- Fetch Alerts for the User ---
+    # Get alerts for the current user, ordered by creation date (newest first)
+    # Adjust the import path for Alert if necessary
+    user_alerts = Alert.objects.filter(user=request.user)
+
     # Generate last 12 months (including current month)
     today = date.today()
     months = []
-    
     # Create list of last 12 months
     for i in range(11, -1, -1):  # 11 down to 0
         month_date = today - relativedelta(months=i)
@@ -325,26 +332,24 @@ def home(request):
             'full_date': month_date  # We'll use this for calculations
         })
     
-    # Calculate income and expenses for each month
+    # Calculate income and expenses for each month (for current user's properties only)
     income_data = []
     expense_data = []
     month_labels = []
-    
     for month_info in months:
         year = month_info['year']
         month = month_info['month']
         month_labels.append(f"{month_info['month_name']} {year}")
-
         # Correct way to call the functions:
-        income = calculate_monthly_income(year, month)  # Pass only year and month
+        income = calculate_monthly_income(year, month, request.user)  # Pass user
         income_data.append(float(income))
-
-        expenses = calculate_monthly_expenses(year, month) # Pass only year and month
+        expenses = calculate_monthly_expenses(year, month, request.user) # Pass user
         expense_data.append(float(expenses))
     
-    # Calculate summary metrics
-    total_income = sum(property_obj.calculate_total_income() for property_obj in Property.objects.all())
-    total_expenses = sum(property_obj.calculate_total_expenses() for property_obj in Property.objects.all())
+    # Calculate summary metrics for current user's properties only
+    user_properties = Property.objects.filter(owner=request.user)
+    total_income = sum(property_obj.calculate_total_income() for property_obj in user_properties)
+    total_expenses = sum(property_obj.calculate_total_expenses() for property_obj in user_properties)
     net_profit_loss = total_income - total_expenses
     
     context = {
@@ -354,14 +359,15 @@ def home(request):
         'total_income': total_income,
         'total_expenses': total_expenses,
         'net_profit_loss': net_profit_loss,
+        # --- Add Alerts to Context ---
+        'alerts': user_alerts, # Pass the fetched alerts to the template
     }
-    
     return render(request, 'home.html', context)
 
 @login_required
 def properties(request):
     # Get all properties
-    all_properties = Property.objects.all().order_by('-purchase_date')
+    all_properties = Property.objects.filter(owner=request.user).order_by('-purchase_date')
     
     # Prepare data for the template
     properties_with_financials = []
@@ -385,7 +391,9 @@ def add_property(request):
     if request.method == 'POST':
         form = PropertyForm(request.POST)
         if form.is_valid():
-            form.save()
+            property_obj = form.save(commit=False)
+            property_obj.owner = request.user  # Set the owner to current user
+            property_obj.save()
             messages.success(request, 'Property added successfully!')
             return redirect('properties')
     else:
@@ -393,8 +401,7 @@ def add_property(request):
     
     return render(request, 'property/add_property.html', {'form': form})
 
-def calculate_monthly_income(year, month):
-    
+def calculate_monthly_income(year, month, user):
     total_income = Decimal('0.00')
     today = date.today()
     
@@ -409,8 +416,8 @@ def calculate_monthly_income(year, month):
     # Define the start of the month being calculated
     start_of_month = date(year, month, 1)
 
-    # Get all properties
-    properties = Property.objects.all()
+    # Get only properties owned by the current user
+    properties = Property.objects.filter(owner=user)
     
     # Add base rental income for properties that were owned during this month
     for property_obj in properties:
@@ -480,11 +487,12 @@ def calculate_monthly_income(year, month):
                             print(f"    Income for Tenant: ${income_for_tenant_period}")
                             print(f"  Total Income So Far: ${total_income}\n")
 
-    # --- Add transaction-based income for this specific month ---
+    # --- Add transaction-based income for this specific month (only user's transactions) ---
     month_income_result = Transaction.objects.filter(
         date__year=year,
         date__month=month,
-        transaction_type__in=['rental_income', 'additional_income', 'other_income']
+        transaction_type__in=['rental_income', 'additional_income', 'other_income'],
+        owner=user  # Only user's transactions
     ).aggregate(Sum('amount'))['amount__sum']
     
     month_income = month_income_result or Decimal('0.00')
@@ -496,12 +504,11 @@ def calculate_monthly_income(year, month):
     
     return float(total_income)
 
-def calculate_monthly_expenses(year, month):
-    
+def calculate_monthly_expenses(year, month, user):
     total_expenses = Decimal('0.00')
     
-    # Get all properties
-    properties = Property.objects.all()
+    # Get only properties owned by the current user
+    properties = Property.objects.filter(owner=user)
     
     # Add base mortgage expenses for properties that were owned during this month
     # EXCEPT for owned_outright properties (they don't have mortgages)
@@ -530,11 +537,12 @@ def calculate_monthly_expenses(year, month):
                         total_expenses += daily_mortgage * days_owned
                         print(f"Expense for {year}-{month}: ${total_expenses}")
     
-    # Add transaction-based expenses for this specific month
+    # Add transaction-based expenses for this specific month (only user's transactions)
     month_expenses_result = Transaction.objects.filter(
         date__year=year,
         date__month=month,
-        transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense']
+        transaction_type__in=['maintenance', 'taxes', 'insurance', 'other_expense'],
+        owner=user  # Only user's transactions
     ).aggregate(Sum('amount'))['amount__sum']
     
     month_expenses = month_expenses_result or Decimal('0.00')
@@ -544,7 +552,8 @@ def calculate_monthly_expenses(year, month):
 
 @login_required
 def add_tenant(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    # Only allow access to properties owned by the current user
+    property_obj = get_object_or_404(Property, id=property_id, owner=request.user)
     
     # Prevent adding tenants to owner-occupied properties
     if property_obj.property_type == 'owner_occupied':
@@ -613,16 +622,23 @@ def add_transaction(request):
     if request.method == 'POST':
         form = TransactionForm(request.POST)
         if form.is_valid():
-            form.save()
+            transaction_obj = form.save(commit=False)
+            transaction_obj.owner = request.user  # Set owner
+            transaction_obj.save()
             messages.success(request, 'Transaction added successfully!')
-            return redirect('properties')  # Changed from 'transaction_log' to 'properties'
+            return redirect('properties')
     else:
         form = TransactionForm()
-        # Pre-select property if provided in URL
+        # Pre-select property if provided in URL (only show user's properties)
         property_id = request.GET.get('property')
         if property_id:
-            form.fields['property'].initial = property_id
-    
+            try:
+                property_obj = Property.objects.get(id=property_id, owner=request.user)
+                form.fields['property'].initial = property_id
+            except Property.DoesNotExist:
+                pass
+    # Only show current user's properties in the form
+    form.fields['property'].queryset = Property.objects.filter(owner=request.user)
     return render(request, 'transactions/add_transaction.html', {'form': form})
 
 @login_required
@@ -660,7 +676,8 @@ def add_bulk_transaction(request):
 
 @login_required
 def property_detail(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    # Only allow access to properties owned by the current user
+    property_obj = get_object_or_404(Property, id=property_id, owner=request.user)
     
     # Get transactions for this property
     transactions = Transaction.objects.filter(property=property_obj).order_by('-date')
@@ -682,26 +699,19 @@ def property_detail(request, property_id):
 
 @login_required
 def transaction_log(request):
-    # Get all transactions, ordered by date (newest first)
-    transactions = Transaction.objects.select_related('property').order_by('-date', '-created_at')
-    
+    # Get only transactions owned by the current user
+    transactions = Transaction.objects.filter(owner=request.user).select_related('property').order_by('-date', '-created_at')
     # Optional: Add filtering capabilities
     transaction_type = request.GET.get('type')
     property_id = request.GET.get('property')
-    
     if transaction_type:
         transactions = transactions.filter(transaction_type=transaction_type)
-    
     if property_id:
-        transactions = transactions.filter(property_id=property_id)
-    
-    # Get properties for filter dropdown
-    properties = Property.objects.all().order_by('address')
-    
-    # Calculate summary statistics
-    
-    # Get filtered transactions for summary (we need to re-filter the base queryset for accurate sums)
-    filtered_transactions = Transaction.objects.all()
+        transactions = transactions.filter(property_id=property_id, owner=request.user)
+    # Get properties for filter dropdown (only user's properties)
+    properties = Property.objects.filter(owner=request.user).order_by('address')
+    # Calculate summary statistics for current user's transactions
+    filtered_transactions = Transaction.objects.filter(owner=request.user)
     if transaction_type:
         filtered_transactions = filtered_transactions.filter(transaction_type=transaction_type)
     if property_id:
@@ -735,7 +745,7 @@ def transaction_log(request):
 
 @login_required
 def edit_property(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    property_obj = get_object_or_404(Property, id=property_id, owner=request.user)
     
     if request.method == 'POST':
         if 'delete' in request.POST:
@@ -790,7 +800,8 @@ def calculate_predicted_value(self, years_ahead=5, annual_growth_rate=0.03):
 @login_required
 def tools_home(request):
     """Main tools page"""
-    properties = Property.objects.all()
+    # Only show current user's properties
+    properties = Property.objects.filter(owner=request.user)
     context = {
         'properties': properties
     }
@@ -800,14 +811,15 @@ def tools_home(request):
 def property_value_calculator(request):
     """Property value prediction calculator"""
     if request.method == 'POST':
-        # Check if user wants to clear the projection
-        if 'clear_projection' in request.POST:
-            # Clear the session or redirect to clean state
-            return redirect('value_calculator')
-        
         form = ValuePredictionForm(request.POST)
         if form.is_valid():
             property_obj = form.cleaned_data['property']
+            # Verify user owns this property
+            if property_obj.owner != request.user:
+                messages.error(request, 'You do not have permission to access this property.')
+                return redirect('value_calculator')
+            
+            # If we get here, the form is valid and the user has permission
             years_ahead = form.cleaned_data['years_ahead']
             growth_rate = form.cleaned_data['annual_growth_rate'] / 100  # Convert percentage to decimal
             scenario_name = form.cleaned_data['scenario_name'] or f"{growth_rate*100}% Growth Scenario"
@@ -831,11 +843,15 @@ def property_value_calculator(request):
                 'show_results': True
             }
         else:
+            # Form is not valid, pass the form with errors back to the template
             context = {'form': form}
     else:
+        # GET request - display empty form
         form = ValuePredictionForm()
+        # Only show user's own properties
+        form.fields['property'].queryset = Property.objects.filter(owner=request.user)
         context = {'form': form}
-    
+        
     return render(request, 'tools/value_calculator.html', context)
 
 @login_required
@@ -843,22 +859,24 @@ def add_scenario(request):
     if request.method == 'POST':
         form = ScenarioForm(request.POST)
         if form.is_valid():
-            form.save()
+            scenario_obj = form.save(commit=False)
+            scenario_obj.owner = request.user  # Set owner
+            scenario_obj.save()
             messages.success(request, 'Scenario added successfully!')
             return redirect('scenario_list')
     else:
         form = ScenarioForm()
-    
     return render(request, 'tools/add_scenario.html', {'form': form})
 
 @login_required
 def scenario_list(request):
-    scenarios = Scenario.objects.all().order_by('-created_at')
+    # Only show scenarios owned by the current user
+    scenarios = Scenario.objects.filter(owner=request.user).order_by('-created_at')
     return render(request, 'tools/scenario_list.html', {'scenarios': scenarios})
 
 @login_required
 def delete_scenario(request, scenario_id):
-    scenario = get_object_or_404(Scenario, id=scenario_id)
+    scenario = get_object_or_404(Scenario, id=scenario_id, owner=request.user)
     if request.method == 'POST':
         scenario_name = scenario.name
         scenario.delete()
@@ -872,8 +890,13 @@ def scenario_comparison(request):
         form = ScenarioComparisonForm(request.POST)
         if form.is_valid():
             property_obj = form.cleaned_data['property']
+            # Verify user owns this property
+            if property_obj.owner != request.user:
+                messages.error(request, 'You do not have permission to access this property.')
+                return redirect('scenario_comparison')
             years_ahead = form.cleaned_data['years_ahead']
-            selected_scenarios = form.cleaned_data['scenarios']
+            # Only allow selection of user's own scenarios
+            selected_scenarios = form.cleaned_data['scenarios'].filter(owner=request.user)
             
             # Calculate values for each scenario
             results = []
@@ -901,8 +924,9 @@ def scenario_comparison(request):
             context = {'form': form}
     else:
         form = ScenarioComparisonForm()
-        context = {'form': form}
-    
+        # Only show user's own properties and scenarios
+        form.fields['property'].queryset = Property.objects.filter(owner=request.user)
+        form.fields['scenarios'].queryset = Scenario.objects.filter(owner=request.user)
     return render(request, 'tools/scenario_comparison.html', context)
 
 @login_required
@@ -951,7 +975,7 @@ def trend_tracking(request):
 
 @login_required
 def edit_transaction(request, transaction_id):
-    transaction_obj = get_object_or_404(Transaction, id=transaction_id)
+    transaction_obj = get_object_or_404(Transaction, id=transaction_id, owner=request.user)
     
     if request.method == 'POST':
         if 'delete' in request.POST:
@@ -986,7 +1010,7 @@ def tax_summary(request):
     from decimal import Decimal
     print("========== DEBUG: tax_summary view started ==========")
     # Get all properties for the current user
-    properties = Property.objects.all().order_by('purchase_date')
+    properties = Property.objects.filter(owner=request.user).filter(purchase_price__isnull=False).exclude(purchase_price=0)
     print(f"DEBUG: Found {properties.count()} properties")
     # Calculate current financial year
     today = date.today()
@@ -1180,3 +1204,172 @@ def calculate_pro_rata_depreciation(property_obj, start_date, end_date):
     print(f"  DEBUG:       Not rental property or no purchase price, returning 0.00")
     print(f"  DEBUG:   <-- calculate_pro_rata_depreciation result: 0.00")
     return Decimal('0.00')
+
+@login_required
+def user_settings(request):
+    """
+    View for displaying and updating user settings (username).
+    Email changes are handled via a separate form/modal/view.
+    Password changes use Django's built-in view.
+    """
+    if request.method == 'POST':
+        form = UserSettingsForm(request.POST, instance=request.user, user=request.user)
+        if form.is_valid():
+            # For username change, no email verification is needed per your request.
+            user = form.save()
+            messages.success(request, 'Your username has been updated successfully.')
+            logger.info(f"Username updated for user {user.username}.")
+            return redirect('user_settings') # Stay on the settings page
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = UserSettingsForm(instance=request.user, user=request.user)
+    
+    # Also handle email change request on the same page if submitted
+    email_form = EmailChangeForm(user=request.user)
+    if request.method == 'POST' and 'change_email' in request.POST:
+        email_form = EmailChangeForm(request.POST, user=request.user)
+        if email_form.is_valid():
+            new_email = email_form.cleaned_data['new_email']
+            # Trigger the email change verification process
+            if send_settings_change_verification_email(request.user, new_email, request):
+                messages.info(request, f'A confirmation email has been sent to your current email address ({request.user.email}). Please check your inbox to confirm the change to {new_email}.')
+                logger.info(f"Email change requested for user {request.user.username}. Confirmation sent to {request.user.email}.")
+            else:
+                messages.error(request, 'An error occurred while sending the confirmation email. Please try again later.')
+            return redirect('user_settings') # Redirect to clear POST data
+
+    context = {
+        'form': form,
+        'email_form': email_form, # Pass the email change form
+    }
+    return render(request, 'registration/user_settings.html', context)
+
+@login_required
+def confirm_email_change(request):
+    """
+    View to confirm an email change via the token sent to the old email.
+    """
+    token = request.GET.get('token')
+    user = request.user # Confirmation must be for the logged-in user
+
+    if not token:
+        messages.error(request, 'Invalid email change confirmation link.')
+        return redirect('user_settings')
+
+    # Use the utility function to verify the token
+    if confirm_email_change_token(user, token):
+        # Token is valid, proceed with the change
+        if user.email_change_new_email:
+            old_email = user.email
+            user.email = user.email_change_new_email
+            # Clear the temporary token fields
+            user.email_change_token = None
+            user.email_change_token_expires_at = None
+            user.email_change_new_email = None
+            user.save(update_fields=['email', 'email_change_token', 'email_change_token_expires_at', 'email_change_new_email'])
+            
+            messages.success(request, f'Your email address has been successfully changed from {old_email} to {user.email}.')
+            logger.info(f"Email address changed for user {user.username} from {old_email} to {user.email}.")
+        else:
+            messages.error(request, 'Invalid email change request.')
+    else:
+        messages.error(request, 'This email change confirmation link is invalid or has expired.')
+
+    return redirect('user_settings')
+
+@login_required
+def delete_account(request):
+    """
+    View to handle user account deletion.
+    Requires password confirmation for security.
+    """
+    if request.method == 'POST':
+        # Get the password entered by the user for confirmation
+        password = request.POST.get('password')
+        
+        # Verify the password against the logged-in user
+        user = request.user
+        if user.check_password(password):
+            # Password is correct, proceed with deletion
+            username = user.username # Store for logging before deletion
+            email = user.email       # Store for logging before deletion
+            
+            # --- Send a final confirmation email ---
+            # Send an email to the user confirming their account was deleted. This can be helpful for audit purposes or if the deletion was unauthorized.
+            send_mail(
+                'Account Deleted',
+                f'Your account ({username}) has been successfully deleted.',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=True, # Don't break the process if email fails
+            )
+            
+            # Delete the user account
+            user.delete()
+            
+            # Log the user out, as their account no longer exists
+            logout(request)
+            
+            # Add a success message
+            messages.success(request, 'Your account has been successfully deleted. We are sorry to see you go.')
+            logger.info(f"User account deleted: {username} ({email})")
+            
+            # Redirect to a page indicating successful deletion or the login page
+            # Consider creating a dedicated 'account_deleted.html' template
+            return redirect('login') # Redirect to login page
+        else:
+            # Password is incorrect
+            messages.error(request, 'Incorrect password. Account deletion failed.')
+            logger.warning(f"Failed account deletion attempt for user {user.username}. Incorrect password provided.")
+            # Re-render the confirmation page with an error
+            return render(request, 'registration/delete_account.html')
+    else:
+        # GET request: Show the confirmation page
+        return render(request, 'registration/delete_account.html')
+
+@login_required
+def alert_list(request):
+    """
+    View to list user alerts and handle creating new ones.
+    Displays a form to add a new alert and lists existing alerts.
+    """
+    # Get alerts for the current user, ordered by creation date (newest first)
+    alerts = Alert.objects.filter(user=request.user)
+
+    if request.method == 'POST':
+        # Handle form submission for creating a new alert
+        form = AlertForm(request.POST)
+        if form.is_valid():
+            alert = form.save(commit=False)
+            alert.user = request.user  # Associate the alert with the current user
+            alert.save()
+            messages.success(request, "Alert created successfully!") # Optional success message
+            # Redirect to the same page to avoid resubmission on refresh
+            return redirect('alert_list') # Make sure 'alert_list' matches your URL name
+        # If the form is invalid, it will be re-rendered with errors
+    else:
+        # Display an empty form for GET requests
+        form = AlertForm()
+
+    # Render the template, passing the list of alerts and the form
+    return render(request, 'alerts/alert_list.html', {'alerts': alerts, 'form': form})
+
+@login_required
+def alert_delete(request, alert_id):
+    """
+    View to delete a specific alert.
+    Requires confirmation (via POST request).
+    """
+    # Get the alert, ensuring it belongs to the current user
+    alert = get_object_or_404(Alert, id=alert_id, user=request.user)
+
+    if request.method == 'POST':
+        # Perform the deletion
+        alert.delete()
+        messages.success(request, "Alert deleted successfully!") # Optional success message
+        # Redirect back to the alert list page
+        return redirect('alert_list') # Make sure 'alert_list' matches your URL name
+
+    return redirect('alert_list') # Or render a confirmation template if preferred
+

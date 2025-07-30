@@ -2,10 +2,63 @@ from django.db import models
 from django.utils import timezone
 from datetime import date
 import calendar
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, User
 from django.db.models import Sum
 import string
 import secrets
+from django.conf import settings
+
+class CustomUser(AbstractUser):
+    # Add first_name and last_name explicitly if you want more control,
+    # though AbstractUser already includes them. Ensure they are required in forms if needed.
+    # first_name = models.CharField(max_length=150, blank=True) # Already in AbstractUser
+    # last_name = models.CharField(max_length=150, blank=True)  # Already in AbstractUser
+    # Your existing custom fields
+    failed_login_attempts = models.IntegerField(default=0)
+    last_failed_login = models.DateTimeField(null=True, blank=True)
+    phone_number = models.CharField(max_length=15, blank=True)
+    # Email Verification Fields
+    is_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=100, blank=True, null=True)
+    # Password Reset Fields
+    reset_token = models.CharField(max_length=100, blank=True, null=True)
+    reset_token_expires_at = models.DateTimeField(blank=True, null=True)
+
+     # --- Fields for Email Change Confirmation ---
+    email_change_token = models.CharField(max_length=100, blank=True, null=True)
+    email_change_token_expires_at = models.DateTimeField(blank=True, null=True)
+    email_change_new_email = models.EmailField(blank=True, null=True) # Store new email temporarily
+    
+    def reset_failed_attempts(self):
+        self.failed_login_attempts = 0
+        self.last_failed_login = None
+        self.save()
+        
+    def generate_verification_token(self):
+        """Generates a secure random token for email verification."""
+        self.verification_token = secrets.token_urlsafe(32)
+        self.save(update_fields=['verification_token'])
+        
+    def generate_reset_token(self, expiry_minutes=60):
+        """Generates a secure random token for password reset with expiry."""
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expires_at = timezone.now() + timezone.timedelta(minutes=expiry_minutes)
+        self.save(update_fields=['reset_token', 'reset_token_expires_at'])
+        
+    def is_reset_token_valid(self):
+        """Checks if the reset token is present and not expired."""
+        if not self.reset_token or not self.reset_token_expires_at:
+            return False
+        return timezone.now() < self.reset_token_expires_at
+        
+    def __str__(self):
+        return self.username
+        
+    class Meta(AbstractUser.Meta): # Inherit meta from AbstractUser
+        # Ensure email addresses are unique across the entire user base
+        constraints = [
+            models.UniqueConstraint(fields=['email'], name='unique_email_constraint')
+        ]
 
 class Property(models.Model):
     PROPERTY_TYPES = [
@@ -24,21 +77,24 @@ class Property(models.Model):
     weekly_mortgage = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Weekly mortgage payment")
     created_at = models.DateTimeField(auto_now_add=True)
     
+    # Add owner field to link property to user (corrected reference)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='properties')
+    
     def __str__(self):
         return f"{self.address} ({self.get_property_type_display()})"
-    
+        
     @property
     def is_rental(self):
         return self.property_type == 'rental'
-    
+        
     @property
     def is_owner_occupied(self):
         return self.property_type == 'owner_occupied'
-    
+        
     @property
     def is_owned_outright(self):
         return self.property_type == 'owned_outright'
-    
+        
     def calculate_total_income(self):
         from datetime import date
         from decimal import Decimal
@@ -252,64 +308,40 @@ class Transaction(models.Model):
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    # Add owner field to link transaction to user
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='transactions')
+    
     def __str__(self):
         return f"{self.transaction_type}: ${self.amount} on {self.date}"
-    
+
 class Scenario(models.Model):
     name = models.CharField(max_length=100)
     growth_rate = models.DecimalField(max_digits=5, decimal_places=2)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    # Add owner field to link scenario to user
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='scenarios')
+    
     def __str__(self):
         return f"{self.name} ({self.growth_rate}%)"
     
-class CustomUser(AbstractUser):
-    # Add first_name and last_name explicitly if you want more control,
-    # though AbstractUser already includes them. Ensure they are required in forms if needed.
-    # first_name = models.CharField(max_length=150, blank=True) # Already in AbstractUser
-    # last_name = models.CharField(max_length=150, blank=True)  # Already in AbstractUser
-    
-    # Your existing custom fields
-    failed_login_attempts = models.IntegerField(default=0)
-    last_failed_login = models.DateTimeField(null=True, blank=True)
-    phone_number = models.CharField(max_length=15, blank=True)
+class Alert(models.Model):
+    ALERT = 'alert'
+    REMINDER = 'reminder'
+    TYPE_CHOICES = [
+        (ALERT, 'Alert'),
+        (REMINDER, 'Reminder'),
+    ]
 
-    # Email Verification Fields
-    is_verified = models.BooleanField(default=False)
-    verification_token = models.CharField(max_length=100, blank=True, null=True)
-
-    # Password Reset Fields
-    reset_token = models.CharField(max_length=100, blank=True, null=True)
-    reset_token_expires_at = models.DateTimeField(blank=True, null=True)
-
-    def reset_failed_attempts(self):
-        self.failed_login_attempts = 0
-        self.last_failed_login = None
-        self.save()
-
-    def generate_verification_token(self):
-        """Generates a secure random token for email verification."""
-        self.verification_token = secrets.token_urlsafe(32)
-        self.save(update_fields=['verification_token'])
-
-    def generate_reset_token(self, expiry_minutes=60):
-        """Generates a secure random token for password reset with expiry."""
-        self.reset_token = secrets.token_urlsafe(32)
-        self.reset_token_expires_at = timezone.now() + timezone.timedelta(minutes=expiry_minutes)
-        self.save(update_fields=['reset_token', 'reset_token_expires_at'])
-
-    def is_reset_token_valid(self):
-        """Checks if the reset token is present and not expired."""
-        if not self.reset_token or not self.reset_token_expires_at:
-            return False
-        return timezone.now() < self.reset_token_expires_at
+    # Use settings.AUTH_USER_MODEL for ForeignKey to custom user
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default=ALERT)
+    message = models.TextField(help_text="Enter your custom alert message here.")
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.username
+        return f"[{self.user.username}] {self.type}: {self.message}"
 
-    class Meta(AbstractUser.Meta): # Inherit meta from AbstractUser
-        # Ensure email addresses are unique across the entire user base
-        constraints = [
-            models.UniqueConstraint(fields=['email'], name='unique_email_constraint')
-        ]
+    class Meta:
+        ordering = ['-created_at']

@@ -1,0 +1,124 @@
+<!-- templates/registration/user_settings.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Account Settings{% endblock %}
+
+{% block content %}
+<div class="login-page-wrapper">
+    <div class="card login-card">
+        <h2>Account Settings</h2>
+
+        <!-- Notification Bar -->
+        {% if messages %}
+            <div style="padding: 10px; margin: 10px 0; border-radius: 4px;">
+                {% for message in messages %}
+                    <div class="alert" style="background-color: {% if message.tags == 'success' %}var(--color-positive){% elif message.tags == 'error' %}var(--color-negative){% else %}var(--color-alert){% endif %}; color: white; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Username Change Form -->
+        <h3>Change Username</h3>
+        <form method="post">
+            {% csrf_token %}
+            <!-- Hidden input to identify the form if needed, or use button names -->
+            <input type="hidden" name="form_type" value="username_change">
+            
+            {% if form.non_field_errors %}
+                <div class="error-message">
+                    <ul class="errorlist">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                {{ form.username.label_tag }}
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <small style="color: var(--color-muted);">You can change your username freely.</small>
+            </div>
+
+            <!-- Use Metallic Button -->
+            <button type="submit" class="btn-metallic btn-accent-metallic">Update Username</button>
+        </form>
+
+        <!-- Email Change Form -->
+        <h3 style="margin-top: 2rem;">Change Email Address</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="change_email" value="1"> <!-- To identify this form -->
+            
+            {% if email_form.non_field_errors %}
+                <div class="error-message">
+                    <ul class="errorlist">
+                        {% for error in email_form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ email_form.new_email.id_for_label }}">New Email Address:</label>
+                {{ email_form.new_email }}
+                {% if email_form.new_email.errors %}
+                    <ul class="errorlist">
+                        {% for error in email_form.new_email.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <small style="color: var(--color-muted);">A confirmation email will be sent to your current email address (<strong>{{ user.email }}</strong>) to verify this change.</small>
+            </div>
+
+            <!-- Use Metallic Button -->
+            <button type="submit" class="btn-metallic btn-accent-metallic">Request Email Change</button>
+        </form>
+
+        <!-- Password Change Button -->
+        <h3 style="margin-top: 2rem;">Change Password</h3>
+        <!-- Use Metallic Button -->
+        <a href="{% url 'password_change' %}" class="btn-metallic btn-secondary-metallic" style="display: inline-block; text-decoration: none; padding: 10px 20px;">Change Your Password</a>
+        
+        <!-- Delete Account Section -->
+        <h3 style="margin-top: 2rem; color: #dc3545;">Danger Zone</h3>
+        <!-- Use Metallic Button -->
+        <a href="{% url 'delete_account' %}" class="btn-metallic btn-negative-metallic" style="display: inline-block; text-decoration: none; padding: 10px 20px; margin-bottom: 10px;">Delete Your Account</a>
+        <small style="color: var(--color-muted);">Permanently delete your account and all associated data.</small>
+
+        <div style="margin-top: 2rem;">
+            <!-- Use Metallic Button -->
+            <a href="{% url 'dashboard' %}" class="btn-metallic btn-secondary-metallic" style="display: inline-block; text-decoration: none; padding: 10px 20px;">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add fade-out script for notification bar if desired
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationContainer = document.querySelector('.card > div[style*="padding: 10px; margin: 10px 0; border-radius: 4px;"]');
+    if (notificationContainer) {
+        // Optional: Auto-hide notifications after 5 seconds
+        setTimeout(() => {
+            notificationContainer.style.transition = 'opacity 0.5s ease-out';
+            notificationContainer.style.opacity = '0';
+            setTimeout(() => {
+                notificationContainer.style.display = 'none';
+            }, 500);
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

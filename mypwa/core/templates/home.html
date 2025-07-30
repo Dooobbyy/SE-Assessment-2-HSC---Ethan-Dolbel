@@ -7,6 +7,17 @@
 <div class="main-content">
     <h1>Real Estate Financial Dashboard</h1>
 
+    <!-- Notification Bar -->
+    {% if messages %}
+        <div style="padding: 10px; margin: 10px 0; border-radius: 4px;" id="notification-container">
+            {% for message in messages %}
+                <div class="alert" style="background-color: {% if message.tags == 'success' %}var(--color-positive){% elif message.tags == 'error' %}var(--color-negative){% else %}var(--color-alert){% endif %}; color: white; padding: 10px; border-radius: 4px; margin-bottom: 5px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <!-- Summary Cards Section -->
     <div class="stats-grid">
         <div class="card">
@@ -41,8 +52,13 @@
     <!-- Alerts Section -->
     <div class="alerts">
         <ul>
-            <li><strong>Alert:</strong> Low cash flow detected in June.</li>
-            <li><strong>Reminder:</strong> Property taxes due next month.</li>
+            {% for alert in alerts %}
+                <li>
+                    <strong>{{ alert.get_type_display }}:</strong> {{ alert.message }}
+                </li>
+            {% empty %}
+                <li>No alerts found.</li>
+            {% endfor %}
         </ul>
     </div>
 </div>
@@ -112,6 +128,22 @@
                 }
             }
         });
+
+        // Add script to automatically hide SUCCESS notifications after 5 seconds
+        const notificationContainer = document.getElementById('notification-container');
+        if (notificationContainer) {
+            // Only target success messages for auto-hiding
+            const successMessages = notificationContainer.querySelectorAll('.alert[style*="var(--color-positive)"], .alert[style*="background-color: var(--color-positive)"]');
+            if (successMessages.length > 0) {
+                setTimeout(() => {
+                    notificationContainer.style.transition = 'opacity 0.5s ease-out';
+                    notificationContainer.style.opacity = '0';
+                    setTimeout(() => {
+                        notificationContainer.style.display = 'none';
+                    }, 500);
+                }, 5000); // 5 seconds
+            }
+        }
     });
 </script>
 {% endblock %}
