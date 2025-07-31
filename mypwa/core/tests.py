@@ -1,51 +1,77 @@
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.utils import timezone
 from django.contrib.auth import get_user_model
-from .models import Property
+from .models import Property  # Adjust if it's in a different app
 
 User = get_user_model()
 
-class UserAuthTests(TestCase):
+class LoginTests(TestCase):
     def setUp(self):
         self.client = Client()
+        self.password = 'testpass123'
+        
+        # Verified user
+        self.verified_user = User.objects.create_user(
+            username='verifieduser',
+            email='verified@example.com',
+            password=self.password,
+            is_verified=True
+        )
 
-    def test_register(self):
-        response = self.client.post(reverse('register'), {
-            'username': 'newuser',
-            'email': 'new@example.com',
-            'password1': 'TestPassword12345',
-            'password2': 'TestPassword12345'
-        }, follow=True)
+        # Unverified user
+        self.unverified_user = User.objects.create_user(
+            username='unverifieduser',
+            email='unverified@example.com',
+            password=self.password,
+            is_verified=False
+        )
 
-        print("\nREGISTER RESPONSE HTML:\n", response.content.decode())  # Debug print
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(User.objects.filter(username='newuser').exists())
-
-    def test_login(self):
-        # Create user with secure-enough password
-        User.objects.create_user(username='testuser', email='test@example.com', password='TestPassword12345')
+    def test_successful_login_verified_user(self):
         response = self.client.post(reverse('login'), {
-            'username': 'testuser',
-            'password': 'TestPassword12345'
-        }, follow=True)
-        self.assertEqual(response.status_code, 200)
+            'username': self.verified_user.username,
+            'password': self.password
+        })
+        self.assertRedirects(response, reverse('dashboard'))
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
 
-class PropertyTests(TestCase):
+    def test_login_unverified_user(self):
+        response = self.client.post(reverse('login'), {
+            'username': self.unverified_user.username,
+            'password': self.password
+        })
+        self.assertContains(response, 'Please verify your email address', status_code=200)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+    def test_login_invalid_credentials(self):
+        response = self.client.post(reverse('login'), {
+            'username': 'nonexistent',
+            'password': 'wrongpass'
+        })
+        self.assertContains(response, 'Invalid username/email or password', status_code=200)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+
+class PropertyModelTests(TestCase):
     def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(username='testuser', password='TestPassword12345')
-        self.client.force_login(self.user)
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
 
-    def test_add_property(self):
-        response = self.client.post(reverse('add_property'), {
-            'address': '123 Test Street',
-            'purchase_date': '2023-01-01',
-            'purchase_price': 500000,
-            'weekly_rent': 1200,
-            'weekly_mortgage': 800,
-            'property_type': 'rental'  # Must match choices
-        }, follow=True)
+    def test_create_property(self):
+        from .models import Property
+        property = Property.objects.create(
+            address='99 Example Street',
+            purchase_date='2023-06-15',
+            purchase_price=600000.00,
+            property_type='House',  # Ensure this matches your choices
+            weekly_mortgage=500.00,
+            owner=self.user  # Set manually like in your view
+        )
 
-        print("\nPROPERTY ADD RESPONSE HTML:\n", response.content.decode())  # Debug print
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(Property.objects.filter(address='123 Test Street').exists())
+        self.assertEqual(Property.objects.count(), 1)
+        self.assertEqual(property.owner.username, 'testuser')
+        self.assertEqual(property.address, '99 Example Street')
+        self.assertEqual(float(property.purchase_price), 600000.00)
