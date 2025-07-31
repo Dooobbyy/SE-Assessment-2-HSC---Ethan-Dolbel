@@ -145,14 +145,14 @@ LOGOUT_REDIRECT_URL = '/login/'
 # === SECURITY ENHANCEMENTS FOR FINANCIAL APPLICATION ===
 
 # Security Settings (Enable these in production)
-SECURE_SSL_REDIRECT = True  # Enable HTTPS redirect
+SECURE_SSL_REDIRECT = False  # Enable HTTPS redirect
 SECURE_HSTS_SECONDS = 31536000  # 1 year HSTS
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-SESSION_COOKIE_SECURE = True  # HTTPS only cookies
-CSRF_COOKIE_SECURE = True     # HTTPS only CSRF cookies
+SESSION_COOKIE_SECURE = False  # HTTPS only cookies
+CSRF_COOKIE_SECURE = False     # HTTPS only CSRF cookies
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Session Security
