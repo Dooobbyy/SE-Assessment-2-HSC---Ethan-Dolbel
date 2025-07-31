@@ -892,6 +892,9 @@ def delete_scenario(request, scenario_id):
 
 @login_required
 def scenario_comparison(request):
+    # Initialize context dictionary at the beginning
+    context = {}
+
     if request.method == 'POST':
         form = ScenarioComparisonForm(request.POST)
         if form.is_valid():
@@ -908,9 +911,10 @@ def scenario_comparison(request):
             results = []
             for scenario in selected_scenarios:
                 growth_rate = float(scenario.growth_rate) / 100
+                # Assuming these methods exist on your Property model and take the correct arguments
                 current_value = property_obj.calculate_current_value(growth_rate)
                 future_value = property_obj.calculate_future_value(years_ahead, growth_rate)
-                roi = property_obj.calculate_roi(growth_rate)
+                roi = property_obj.calculate_roi(growth_rate) # Or maybe roi needs years_ahead too?
                 
                 results.append({
                     'scenario': scenario,
@@ -919,6 +923,7 @@ def scenario_comparison(request):
                     'roi': roi,
                 })
             
+            # Populate context for successful POST
             context = {
                 'form': form,
                 'results': results,
@@ -927,12 +932,18 @@ def scenario_comparison(request):
                 'show_results': True
             }
         else:
-            context = {'form': form}
+            # Populate context for invalid form submission
+            context = {'form': form, 'show_results': False} # Ensure show_results is False
     else:
+        # Handle GET request: Initialize form and set querysets
         form = ScenarioComparisonForm()
         # Only show user's own properties and scenarios
         form.fields['property'].queryset = Property.objects.filter(owner=request.user)
         form.fields['scenarios'].queryset = Scenario.objects.filter(owner=request.user)
+        # Populate context for initial GET request
+        context = {'form': form, 'show_results': False} # Ensure show_results is False
+
+    # Render the template with the (now always defined) context
     return render(request, 'tools/scenario_comparison.html', context)
 
 @login_required

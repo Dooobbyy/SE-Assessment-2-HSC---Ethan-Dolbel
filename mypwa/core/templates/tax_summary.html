@@ -1,8 +1,6 @@
 <!-- templates/tax_summary.html -->
 {% extends 'base.html' %}
-
 {% block title %}Tax Summary {{ financial_year_display }} - Real Estate Finance Tracker{% endblock %}
-
 {% block content %}
 <div class="main-content">
     <div class="tax-summary-page">
@@ -25,7 +23,6 @@
             <p><em>This section is for debugging and should be removed in production.</em></p>
         </div> -->
         <!-- END DEBUG SECTION -->
-
         <!-- Print Button -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Tax Summary for {{ financial_year_display }}</h1>
@@ -33,7 +30,6 @@
                 🖨️ Print Tax Summary
             </button>
         </div>
-
         <!-- Tax Summary Header -->
         <div class="card" style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
@@ -55,7 +51,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Property Details -->
         {% for prop_data in properties_data %}
         <div class="card" style="margin-bottom: 20px;">
@@ -81,9 +76,8 @@
                     </p>
                 </div>
             </div>
-
             <!-- Tenant Information -->
-            {% if prop_data.property.tenant_set.all %}
+            {% if prop_data.property.tenants.all %}
             <div style="margin-top: 20px;">
                 <h4>Tenant History (ToDate)</h4>
                 <div class="table-container">
@@ -97,7 +91,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for tenant in prop_data.property.tenant_set.all %}
+                            {% for tenant in prop_data.property.tenants.all %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ tenant.move_in_date|date:"M d, Y" }}</td>
@@ -110,71 +104,88 @@
                 </div>
             </div>
             {% endif %}
+            
+            <!-- Add debug output to check if transactions exist -->
+            <p>Number of Transactions: {{ prop_data.property.transaction_set.count }}</p>
 
-            <!-- Transaction Summary -->
+                        <!-- Transaction Summary (ToDate) -->
             <div style="margin-top: 20px;">
                 <h4>Transaction Summary (ToDate)</h4>
-                <!-- Get all transactions for the property first -->
+                <!-- Debug: Show total count of transactions linked to this property, regardless of date or owner -->
+                <p style="font-size: 0.9em; color: #666;"><em>Total Transactions for Property (Debug): {{ prop_data.property.transaction_set.count }}</em></p>
+
+                <!-- Get all transactions for the property -->
                 {% with property_transactions=prop_data.property.transaction_set.all %}
+                
                 {% if property_transactions %}
-                <div class="table-container">
-                    <table class="property-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Description</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Loop through all transactions and manually filter by date -->
-                            {% for transaction in property_transactions %}
-                                {% if transaction.date >= period_start and transaction.date <= period_end %}
+                    <!-- Debug: Show count after fetching -->
+                    <p style="font-size: 0.9em; color: #666;"><em>Fetched Transactions Count: {{ property_transactions|length }}</em></p>
+                    
+                    <div class="table-container">
+                        <table class="property-table">
+                            <thead>
                                 <tr>
-                                    <td>{{ transaction.date|date:"M d, Y" }}</td>
-                                    <td>{{ transaction.get_transaction_type_display }}</td>
-                                    <td>{{ transaction.description|default:"-" }}</td>
-                                    <td style="{% if transaction.transaction_type in 'rental_income,additional_income,other_income' %}color: var(--color-positive);{% else %}color: var(--color-negative);{% endif %}">
-                                        {% if transaction.transaction_type in 'maintenance,taxes,insurance,other_expense' %}-{% endif %}${{ transaction.amount|floatformat:2 }}
-                                    </td>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <!-- Optional: Add Owner for debugging if needed -->
+                                    <!-- <th>Owner</th> -->
                                 </tr>
-                                {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {% for transaction in property_transactions %}
+                                    <!-- Apply date filter -->
+                                    {% if transaction.date >= period_start and transaction.date <= period_end %}
+                                    <tr>
+                                        <td>{{ transaction.date|date:"M d, Y" }}</td>
+                                        <td>{{ transaction.get_transaction_type_display }}</td>
+                                        <td>{{ transaction.description|default:"-"|truncatechars:50 }}</td> <!-- Added truncation like transaction_log -->
+                                        <td style="{% if transaction.transaction_type in 'rental_income,additional_income,other_income' %}color: var(--color-positive);{% else %}color: var(--color-negative);{% endif %}; text-align: right;"> <!-- Added text-align like transaction_log -->
+                                            {% if transaction.transaction_type in 'maintenance,taxes,insurance,other_expense' %}-{% endif %}${{ transaction.amount|floatformat:2 }}
+                                        </td>
+                                        <!-- Optional: Add Owner for debugging if needed -->
+                                        <!-- <td>{{ transaction.owner.username }}</td> -->
+                                    </tr>
+                                    {% else %}
+                                    <!-- Debug: Show skipped transactions -->
+                                    <!-- <tr style="background-color: #f9f9f9;">
+                                        <td colspan="4" style="font-size: 0.8em; color: #999;">Skipped (Outside Date Range {{ period_start|date:"Y-m-d" }} to {{ period_end|date:"Y-m-d" }}): {{ transaction.date|date:"Y-m-d" }} - {{ transaction.get_transaction_type_display }} - ${{ transaction.amount }}</td>
+                                    </tr> -->
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 {% else %}
-                <p>No transactions found for this property.</p>
+                    <p>No transactions are linked to this property.</p>
                 {% endif %}
                 {% endwith %}
             </div>
         </div>
         {% endfor %}
-
-        <!-- Disclaimer -->
-        <div class="card" style="margin-top: 20px; background-color: var(--color-warning-light);">
+        </div>
+        <!-- Disclaimer - Hidden on Print -->
+        <div class="card no-print" style="margin-top: 20px; background-color: var(--color-warning-light);">
             <h3 style="color: var(--color-warning);">⚠️ Important Tax Disclaimer</h3>
             <p>This tax summary shows actual income and expenses incurred from the start of the financial year (July 1) to today's date. It is provided for your convenience and should not be considered as tax advice. Please consult with a qualified tax professional to ensure accuracy and compliance with all applicable tax laws and regulations.</p>
             <p>The depreciation calculations shown here are simplified and may not reflect the exact amounts you should report on your tax return.</p>
         </div>
     </div>
 </div>
-
 <style>
 @media print {
     /* Hide elements that shouldn't be printed */
     .btn-metallic, .notification-bar, .sidebar, .header,
-    div[style*='background-color: #f0f0f0'] { /* Specifically hide the debug div when printing */
+    div[style*='background-color: #f0f0f0'], /* Specifically hide the debug div when printing */
+    .no-print { /* Add the no-print class here */
         display: none !important;
     }
-
     /* Ensure the content takes full width */
     .main-content {
         margin: 0 !important;
         padding: 0 !important;
     }
-
     /* Remove background colors/images for printing */
     * {
         background: white !important;
@@ -182,27 +193,27 @@
         box-shadow: none !important;
         text-shadow: none !important;
     }
-
     /* Ensure tables are readable */
     .property-table {
         border: 1px solid #000 !important;
     }
-
     .property-table th,
     .property-table td {
         border: 1px solid #000 !important;
         padding: 8px !important;
     }
-
     /* Page breaks */
     .card {
         page-break-inside: avoid;
         margin-bottom: 20px !important;
     }
-
     h1, h2, h3, h4 {
         page-break-after: avoid;
     }
+}
+/* Style for the no-print class in case it's needed on screen */
+.no-print {
+    /* Add any specific screen styles here if necessary */
 }
 </style>
 {% endblock %}

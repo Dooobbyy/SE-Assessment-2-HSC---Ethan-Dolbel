@@ -50,7 +50,7 @@
   </div>
   
   <!-- Footer for Credits -->
-  <footer class="credits">
+  <footer class="credits no-print">
       <div>
           Icons made by 
           <a href="https://www.freepik.com" title="Freepik">Freepik</a>,
@@ -65,5 +65,48 @@
           from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
       </div>
   </footer>
+<style>
+@media print {
+    /* Hide elements that shouldn't be printed */
+    .btn-metallic, .notification-bar, .sidebar, .header,
+    div[style*='background-color: #f0f0f0'], /* Specifically hide the debug div when printing */
+    .no-print { /* Add the no-print class here */
+        display: none !important;
+    }
+    /* Ensure the content takes full width */
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* Remove background colors/images for printing */
+    * {
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    /* Ensure tables are readable */
+    .property-table {
+        border: 1px solid #000 !important;
+    }
+    .property-table th,
+    .property-table td {
+        border: 1px solid #000 !important;
+        padding: 8px !important;
+    }
+    /* Page breaks */
+    .card {
+        page-break-inside: avoid;
+        margin-bottom: 20px !important;
+    }
+    h1, h2, h3, h4 {
+        page-break-after: avoid;
+    }
+}
+/* Style for the no-print class in case it's needed on screen */
+.no-print {
+    /* Add any specific screen styles here if necessary */
+}
+</style>
 </body>
 </html>
