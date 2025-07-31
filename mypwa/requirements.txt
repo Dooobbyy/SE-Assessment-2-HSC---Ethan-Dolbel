@@ -1,0 +1,15 @@
+argon2-cffi==25.1.0
+argon2-cffi-bindings==21.2.0
+asgiref==3.8.1
+cffi==1.17.1
+Django==5.2.1
+django-axes==8.0.0
+django-csp==4.0
+packaging==25.0
+psycopg==3.2.9
+pycparser==2.22
+python-dateutil==2.9.0.post0
+python-decouple==3.8
+six==1.17.0
+sqlparse==0.5.3
+tzdata==2025.2

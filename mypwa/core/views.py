@@ -695,12 +695,8 @@ def property_detail(request, property_id):
         'net_income': net_income,
     }
 
-    try:
-        total_income = property_obj.calculate_total_income()
-    except Exception as e:
-        print(f"Error calculating total income: {e}")
-        total_income = 0
-    
+    # Removed the redundant try/except block
+
     return render(request, 'property/property_detail.html', context)
 
 @login_required
